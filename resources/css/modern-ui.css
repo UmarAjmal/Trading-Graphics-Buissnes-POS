@@ -1,0 +1,428 @@
+/* ============================================================================
+   MODERN MINIMAL UI SYSTEM - Complete Redesign
+   ============================================================================ */
+
+:root {
+  /* Color Palette - Modern Minimal */
+  --color-primary: #6366f1;
+  --color-primary-hover: #4f46e5;
+  --color-primary-light: #e0e7ff;
+  
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #3b82f6;
+  
+  /* Neutral Grays */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  
+  /* Dark Mode Colors */
+  --color-dark-bg: #0f172a;
+  --color-dark-surface: #1e293b;
+  --color-dark-border: #334155;
+  
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+}
+
+/* ============================================================================
+   MODERN ICON SYSTEM
+   ============================================================================ */
+
+.modern-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+  
+  /* Crisp rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  image-rendering: -webkit-optimize-contrast;
+  
+  /* Default sizing - better visibility */
+  width: 20px;
+  height: 20px;
+}
+
+.modern-icon svg {
+  width: 100%;
+  height: 100%;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  shape-rendering: geometricPrecision;
+}
+
+/* Make icons look bolder and more visible */
+.modern-icon svg path {
+  stroke-width: 2;
+}
+
+.modern-icon--xs svg path,
+.modern-icon--sm svg path {
+  stroke-width: 2;
+}
+
+.modern-icon--md svg path {
+  stroke-width: 2;
+}
+
+.modern-icon--lg svg path,
+.modern-icon--xl svg path {
+  stroke-width: 2.5;
+}
+
+/* Icon Sizes - Better visibility */
+.modern-icon--xs { width: 16px; height: 16px; }
+.modern-icon--sm { width: 20px; height: 20px; }
+.modern-icon--md { width: 24px; height: 24px; }
+.modern-icon--lg { width: 28px; height: 28px; }
+.modern-icon--xl { width: 32px; height: 32px; }
+
+/* Icon Containers */
+.icon-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.icon-container--simple {
+  padding: var(--spacing-xs);
+}
+
+.icon-container--soft {
+  padding: var(--spacing-sm);
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-gray-200);
+}
+
+.icon-container--primary {
+  padding: var(--spacing-sm);
+  background: var(--color-primary);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.icon-container--primary:hover {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.icon-container--glass {
+  padding: var(--spacing-sm);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Gradient Containers */
+.icon-container--gradient-blue {
+  padding: var(--spacing-sm);
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+}
+
+.icon-container--gradient-green {
+  padding: var(--spacing-sm);
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  color: white;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+
+.icon-container--gradient-amber {
+  padding: var(--spacing-sm);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+}
+
+.icon-container--gradient-red {
+  padding: var(--spacing-sm);
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+}
+
+/* ============================================================================
+   MODERN BUTTON SYSTEM
+   ============================================================================ */
+
+.modern-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 14px;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+}
+
+.modern-btn--primary {
+  background: var(--color-primary);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.modern-btn--primary:hover {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.modern-btn--soft {
+  background: var(--color-gray-50);
+  color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-200);
+}
+
+.modern-btn--soft:hover {
+  background: var(--color-gray-100);
+  border-color: var(--color-gray-300);
+}
+
+.modern-btn--ghost {
+  background: transparent;
+  color: var(--color-gray-600);
+  border: 1px solid transparent;
+}
+
+.modern-btn--ghost:hover {
+  background: var(--color-gray-50);
+  color: var(--color-gray-800);
+}
+
+/* ============================================================================
+   MODERN CARD SYSTEM
+   ============================================================================ */
+
+.modern-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-gray-200);
+  transition: all var(--transition-normal);
+  overflow: hidden;
+}
+
+.modern-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.modern-card--flat {
+  box-shadow: none;
+  border: 1px solid var(--color-gray-200);
+}
+
+.modern-card--elevated {
+  box-shadow: var(--shadow-lg);
+}
+
+/* ============================================================================
+   SIDEBAR MODERN STYLING
+   ============================================================================ */
+
+.modern-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.modern-sidebar-item:hover {
+  background: var(--color-gray-50);
+  color: var(--color-gray-900);
+}
+
+.modern-sidebar-item--active {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-left: 3px solid var(--color-primary);
+}
+
+.modern-sidebar-item__icon {
+  width: 16px;
+  height: 16px;
+  color: var(--color-gray-500);
+  transition: color var(--transition-fast);
+}
+
+.modern-sidebar-item--active .modern-sidebar-item__icon {
+  color: var(--color-primary);
+}
+
+.modern-sidebar-item:hover .modern-sidebar-item__icon {
+  color: var(--color-gray-700);
+}
+
+/* ============================================================================
+   DARK MODE SUPPORT
+   ============================================================================ */
+
+/* Dark mode color overrides for CSS variables */
+.dark {
+  --color-gray-50: #0f172a;
+  --color-gray-100: #1e293b;
+  --color-gray-200: #334155;
+  --color-gray-300: #475569;
+  --color-gray-400: #64748b;
+  --color-gray-500: #94a3b8;
+  --color-gray-600: #cbd5e1;
+  --color-gray-700: #e2e8f0;
+  --color-gray-800: #f1f5f9;
+  --color-gray-900: #f8fafc;
+}
+
+/* Dark mode component styles */
+.dark .modern-card {
+  background: var(--color-dark-surface);
+  border-color: var(--color-dark-border);
+  color: var(--color-gray-700);
+}
+
+.dark .modern-btn--soft {
+  background: var(--color-dark-surface);
+  color: var(--color-gray-700);
+  border-color: var(--color-dark-border);
+}
+
+.dark .modern-btn--soft:hover {
+  background: var(--color-gray-200);
+  border-color: var(--color-gray-300);
+}
+
+.dark .modern-btn--ghost {
+  color: var(--color-gray-500);
+}
+
+.dark .modern-btn--ghost:hover {
+  background: var(--color-dark-surface);
+  color: var(--color-gray-700);
+}
+
+.dark .modern-sidebar-item {
+  color: var(--color-gray-600);
+}
+
+.dark .modern-sidebar-item:hover {
+  background: var(--color-dark-surface);
+  color: var(--color-gray-700);
+}
+
+.dark .modern-sidebar-item--active {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--color-primary);
+  border-left-color: var(--color-primary);
+}
+
+.dark .modern-sidebar-item__icon {
+  color: var(--color-gray-500);
+}
+
+.dark .modern-sidebar-item--active .modern-sidebar-item__icon {
+  color: var(--color-primary);
+}
+
+.dark .modern-sidebar-item:hover .modern-sidebar-item__icon {
+  color: var(--color-gray-600);
+}
+
+/* Dark mode icon containers */
+.dark .icon-container--soft {
+  background: var(--color-dark-surface);
+  border-color: var(--color-dark-border);
+}
+
+.dark .icon-container--glass {
+  background: rgba(30, 41, 59, 0.3);
+  border-color: rgba(100, 116, 139, 0.2);
+}
+
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
+
+@keyframes modernFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes modernScale {
+  from { transform: scale(0.95); }
+  to { transform: scale(1); }
+}
+
+.modern-fade-in {
+  animation: modernFadeIn 0.3s ease;
+}
+
+.modern-scale {
+  animation: modernScale 0.2s ease;
+}
+
+/* ============================================================================
+   RESPONSIVE UTILITIES
+   ============================================================================ */
+
+@media (max-width: 640px) {
+  .modern-btn {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 13px;
+  }
+  
+  .modern-card {
+    border-radius: var(--radius-md);
+  }
+}

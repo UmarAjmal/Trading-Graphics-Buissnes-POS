@@ -1,0 +1,412 @@
+/* 🎨 Modern Icon & Animation System - Light/Dark Mode */
+
+/* CSS Variables for Theme System */
+:root {
+  /* Light Mode Colors */
+  --icon-color-primary: #3B82F6;
+  --icon-color-accent: #8B5CF6;
+  --icon-color-secondary: #64748B;
+  --icon-bg-light: #F8FAFC;
+  --icon-bg-dark: #1E293B;
+  --icon-shadow: rgba(59, 130, 246, 0.1);
+  --icon-glow: rgba(59, 130, 246, 0);
+  --icon-border: rgba(148, 163, 184, 0.2);
+  
+  /* Animation Variables */
+  --icon-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --icon-hover-scale: 1.05;
+  --icon-active-scale: 0.95;
+  --icon-rotation: 0deg;
+  
+  /* Spacing & Sizing */
+  --icon-size-sm: 16px;
+  --icon-size-md: 24px;
+  --icon-size-lg: 32px;
+  --icon-size-xl: 48px;
+  
+  /* Gradients */
+  --icon-gradient-light: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+  --icon-gradient-accent: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
+}
+
+/* Dark Mode Variables */
+:root.dark {
+  --icon-color-primary: #60A5FA;
+  --icon-color-accent: #A78BFA;
+  --icon-color-secondary: #94A3B8;
+  --icon-bg-light: #0F172A;
+  --icon-bg-dark: #1E293B;
+  --icon-shadow: rgba(96, 165, 250, 0.2);
+  --icon-glow: rgba(96, 165, 250, 0.3);
+  --icon-border: rgba(148, 163, 184, 0.1);
+  
+  /* Dark Mode Gradients */
+  --icon-gradient-light: linear-gradient(135deg, #60A5FA 0%, #A78BFA 100%);
+  --icon-gradient-accent: linear-gradient(135deg, #22D3EE 0%, #60A5FA 100%);
+}
+
+/* Base Icon Container */
+.icon-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: var(--icon-transition);
+  cursor: pointer;
+  border-radius: 0.5rem;
+  
+  /* Crisp rendering - no blur */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  
+  /* Prevent transform blur */
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* Icon Base Styles */
+.icon {
+  width: var(--icon-size-md);
+  height: var(--icon-size-md);
+  fill: var(--icon-color-primary);
+  stroke: var(--icon-color-primary);
+  stroke-width: 1.5;
+  transition: var(--icon-transition);
+  transform-origin: center;
+  
+  /* Crisp SVG rendering */
+  shape-rendering: geometricPrecision;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  -webkit-font-smoothing: antialiased;
+  
+  /* Prevent blur on transforms */
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Icon Sizes */
+.icon--sm { width: var(--icon-size-sm); height: var(--icon-size-sm); }
+.icon--md { width: var(--icon-size-md); height: var(--icon-size-md); }
+.icon--lg { width: var(--icon-size-lg); height: var(--icon-size-lg); }
+.icon--xl { width: var(--icon-size-xl); height: var(--icon-size-xl); }
+
+/* Icon Variants */
+.icon--primary {
+  fill: var(--icon-color-primary);
+  stroke: var(--icon-color-primary);
+}
+
+.icon--accent {
+  fill: var(--icon-color-accent);
+  stroke: var(--icon-color-accent);
+}
+
+.icon--secondary {
+  fill: var(--icon-color-secondary);
+  stroke: var(--icon-color-secondary);
+}
+
+.icon--gradient {
+  fill: url(#iconGradient);
+  stroke: url(#iconGradient);
+}
+
+/* Interactive States */
+.icon-container:hover .icon {
+  transform: scale(var(--icon-hover-scale)) rotate(var(--icon-rotation));
+  filter: drop-shadow(0 4px 8px var(--icon-shadow));
+}
+
+.icon-container:active .icon {
+  transform: scale(var(--icon-active-scale));
+}
+
+/* Animated Icon Variants */
+.icon--spin {
+  animation: iconSpin 2s linear infinite;
+}
+
+.icon--pulse {
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+.icon--bounce {
+  animation: iconBounce 1s ease-in-out infinite;
+}
+
+.icon--float {
+  animation: iconFloat 3s ease-in-out infinite;
+}
+
+/* Button-like Icon Containers */
+.icon-btn {
+  padding: 0.5rem;
+  background: var(--icon-bg-light);
+  border: 1px solid var(--icon-border);
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 4px var(--icon-shadow);
+  transition: var(--icon-transition);
+}
+
+.icon-btn:hover {
+  background: var(--icon-color-primary);
+  border-color: var(--icon-color-primary);
+  box-shadow: 0 4px 12px var(--icon-glow);
+  transform: translateY(-1px);
+}
+
+.icon-btn:hover .icon {
+  fill: white;
+  stroke: white;
+  transform: scale(1.1);
+}
+
+.icon-btn--gradient {
+  background: var(--icon-gradient-light);
+  border: none;
+  color: white;
+}
+
+.icon-btn--gradient .icon {
+  fill: white;
+  stroke: white;
+}
+
+/* Floating Action Button Style */
+.icon-fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--icon-gradient-light);
+  box-shadow: 0 4px 16px var(--icon-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: var(--icon-transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.icon-fab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--icon-gradient-accent);
+  opacity: 0;
+  transition: var(--icon-transition);
+}
+
+.icon-fab:hover::before {
+  opacity: 1;
+}
+
+.icon-fab:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 24px var(--icon-glow);
+}
+
+.icon-fab .icon {
+  fill: white;
+  stroke: white;
+  z-index: 1;
+  position: relative;
+}
+
+/* Theme Toggle Specific Styles */
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--icon-bg-light);
+  border: 1px solid var(--icon-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--icon-transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-toggle:hover {
+  background: var(--icon-color-primary);
+  border-color: var(--icon-color-primary);
+  transform: rotate(180deg);
+}
+
+.theme-toggle:hover .icon {
+  fill: white;
+  stroke: white;
+}
+
+/* Loading States */
+.icon-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.icon-loading .icon {
+  animation: iconSpin 1s linear infinite;
+}
+
+/* Notification Badge */
+.icon-container--badge {
+  position: relative;
+}
+
+.icon-container--badge::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: #EF4444;
+  border-radius: 50%;
+  border: 2px solid var(--icon-bg-light);
+}
+
+/* Modern Gradient Containers - Crisp & Clean */
+.icon-container--gradient-blue {
+  background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+  transform: translateZ(0); /* Force hardware acceleration */
+}
+
+.icon-container--gradient-green {
+  background: linear-gradient(135deg, #10B981 0%, #047857 100%); 
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+  transform: translateZ(0);
+}
+
+.icon-container--gradient-red {
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+  transform: translateZ(0);
+}
+
+.icon-container--gradient-amber {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+  transform: translateZ(0);
+}
+
+.icon-container--gradient-purple {
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+  transform: translateZ(0);
+}
+
+/* All gradient containers have white crisp icons */
+.icon-container--gradient-blue .icon,
+.icon-container--gradient-green .icon,
+.icon-container--gradient-red .icon,
+.icon-container--gradient-amber .icon,
+.icon-container--gradient-purple .icon {
+  color: white;
+  fill: white;
+  stroke: white;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+/* Animations */
+@keyframes iconSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes iconPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+@keyframes iconBounce {
+  0%, 20%, 53%, 80%, 100% { transform: translateY(0); }
+  40%, 43% { transform: translateY(-8px); }
+  70% { transform: translateY(-4px); }
+  90% { transform: translateY(-2px); }
+}
+
+@keyframes iconFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Theme Transition Effect */
+.theme-transitioning * {
+  transition: background-color 0.3s ease, 
+              border-color 0.3s ease, 
+              color 0.3s ease,
+              fill 0.3s ease,
+              stroke 0.3s ease,
+              box-shadow 0.3s ease !important;
+}
+
+/* Micro-interactions */
+.icon-micro {
+  transition: var(--icon-transition);
+}
+
+.icon-micro:hover {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.icon-micro:active {
+  transform: scale(0.95) rotate(-5deg);
+}
+
+/* Glass morphism effect for premium look */
+.icon-glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+:root.dark .icon-glass {
+  background: rgba(30, 41, 59, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  :root {
+    --icon-size-sm: 14px;
+    --icon-size-md: 20px;
+    --icon-size-lg: 28px;
+    --icon-size-xl: 40px;
+  }
+  
+  .icon-fab {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+  }
+}

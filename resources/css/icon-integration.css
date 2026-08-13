@@ -1,0 +1,131 @@
+/**
+ * 🎨 Modern Icon System Integration
+ * Add this to your main CSS file or import in app.css
+ */
+
+/* Import the icon system */
+@import './icon-system.css';
+
+/* Additional Tailwind-compatible utilities */
+@layer components {
+  .btn-icon {
+    @apply icon-container icon-btn;
+  }
+  
+  .btn-icon-primary {
+    @apply btn-icon;
+    --icon-color-primary: theme('colors.blue.500');
+    --icon-color-accent: theme('colors.purple.500');
+  }
+  
+  .btn-icon-success {
+    @apply btn-icon;
+    --icon-color-primary: theme('colors.green.500');
+    --icon-color-accent: theme('colors.emerald.500');
+  }
+  
+  .btn-icon-danger {
+    @apply btn-icon;
+    --icon-color-primary: theme('colors.red.500');
+    --icon-color-accent: theme('colors.pink.500');
+  }
+  
+  .btn-icon-warning {
+    @apply btn-icon;
+    --icon-color-primary: theme('colors.yellow.500');
+    --icon-color-accent: theme('colors.orange.500');
+  }
+}
+
+/* Vue.js Component Integration */
+.icon-component {
+  transition: var(--icon-transition);
+}
+
+.icon-component:hover {
+  transform: var(--icon-hover-scale);
+}
+
+/* React Component Integration */
+.icon-react {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Animation utilities for frameworks */
+.animate-icon-in {
+  animation: iconSlideIn 0.3s ease-out;
+}
+
+.animate-icon-out {
+  animation: iconSlideOut 0.3s ease-in;
+}
+
+@keyframes iconSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes iconSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.9);
+  }
+}
+
+/* Print styles */
+@media print {
+  .icon-container {
+    box-shadow: none !important;
+  }
+  
+  .icon-fab,
+  .theme-toggle {
+    display: none !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --icon-color-primary: #000000;
+    --icon-color-secondary: #666666;
+    --icon-border: #333333;
+  }
+  
+  :root.dark {
+    --icon-color-primary: #ffffff;
+    --icon-color-secondary: #cccccc;
+    --icon-border: #cccccc;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .icon,
+  .icon-container,
+  .icon-btn,
+  .icon-fab,
+  .theme-toggle {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  .icon--spin,
+  .icon--pulse,
+  .icon--bounce,
+  .icon--float {
+    animation: none !important;
+  }
+}

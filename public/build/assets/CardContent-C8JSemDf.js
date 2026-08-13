@@ -1,0 +1,1 @@
+import{_ as e,c as o,o as n,a3 as s}from"./app-nRZ9Nfja.js";const a={name:"CardContent"},r={class:"card-content px-6 py-4"};function c(t,d,p,_,l,f){return n(),o("div",r,[s(t.$slots,"default")])}const m=e(a,[["render",c]]);export{m as C};
