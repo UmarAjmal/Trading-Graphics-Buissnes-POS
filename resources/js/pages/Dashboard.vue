@@ -17,8 +17,8 @@
       </template>
     </PageHeader>
 
-    <!-- KPI Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Primary KPI Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
       <UiCard v-if="loading" v-for="n in 4" :key="n" class="transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
         <div class="flex items-center animate-pulse">
           <div class="flex-shrink-0">
@@ -53,7 +53,58 @@
             <div class="flex items-center text-sm mt-1">
               <span 
                 class="flex items-center font-medium"
-                :class="kpi.trend === 'up' ? 'text-green-600 bg-green-100 px-2 py-0.5 rounded-full' : 'text-red-600 bg-red-100 px-2 py-0.5 rounded-full'"
+                :class="kpi.trend === 'up' ? 'text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full' : 'text-red-600 bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded-full'"
+              >
+                <ModernIcon :name="kpi.trend === 'up' ? 'trending-up' : 'trending-down'" class="w-3 h-3 mr-1" />
+                {{ kpi.change }}
+              </span>
+              <span class="text-gray-400 text-xs ml-2">vs yesterday</span>
+            </div>
+          </div>
+        </div>
+      </UiCard>
+    </div>
+
+    <!-- Daily Financial & Cash in Hand KPI Cards (Cash In, Cash Out, Closing Balance, Profit) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <UiCard v-if="loading" v-for="n in 4" :key="`fin-skel-${n}`" class="transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+        <div class="flex items-center animate-pulse">
+          <div class="flex-shrink-0">
+            <div class="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+          </div>
+          <div class="ml-4">
+            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-2"></div>
+            <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-1"></div>
+            <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+          </div>
+        </div>
+      </UiCard>
+      
+      <UiCard 
+        v-else 
+        v-for="kpi in (dashboardData.financialKpis || [])" 
+        :key="kpi.title" 
+        class="transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border-t-4"
+        :class="getFinancialBorderClass(kpi)"
+      >
+        <div class="flex items-center">
+          <div class="flex-shrink-0 p-3 rounded-xl" :class="getFinancialIconBg(kpi)">
+            <ModernIcon
+              :name="getKpiIconName(kpi.icon)"
+              :variant="getFinancialIconVariant(kpi)"
+              size="lg"
+            />
+          </div>
+          <div class="ml-4 flex-1">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ kpi.title }}</p>
+              <span v-if="kpi.subtitle" class="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">{{ kpi.subtitle }}</span>
+            </div>
+            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ kpi.value }}</p>
+            <div class="flex items-center text-sm mt-1">
+              <span 
+                class="flex items-center font-medium"
+                :class="kpi.trend === 'up' ? 'text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full' : 'text-red-600 bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded-full'"
               >
                 <ModernIcon :name="kpi.trend === 'up' ? 'trending-up' : 'trending-down'" class="w-3 h-3 mr-1" />
                 {{ kpi.change }}
@@ -238,11 +289,37 @@ export default {
     // Reactive data
     const dashboardData = reactive({
       kpis: [],
+      financialKpis: [],
       recentTransactions: [],
       lowStockCount: 0,
       salesData: {},
       salesChartData: null
     })
+
+    // Helper functions for financial cards styling
+    const getFinancialBorderClass = (kpi) => {
+      if (kpi.title === 'Cash In') return 'border-t-emerald-500'
+      if (kpi.title === 'Cash Out') return 'border-t-rose-500'
+      if (kpi.title === 'Closing Balance') return kpi.trend === 'up' ? 'border-t-teal-500' : 'border-t-amber-500'
+      if (kpi.title === 'Profit') return kpi.trend === 'up' ? 'border-t-indigo-500' : 'border-t-red-500'
+      return kpi.trend === 'up' ? 'border-t-green-500' : 'border-t-red-500'
+    }
+
+    const getFinancialIconBg = (kpi) => {
+      if (kpi.title === 'Cash In') return 'bg-emerald-50 dark:bg-emerald-900/30'
+      if (kpi.title === 'Cash Out') return 'bg-rose-50 dark:bg-rose-900/30'
+      if (kpi.title === 'Closing Balance') return 'bg-teal-50 dark:bg-teal-900/30'
+      if (kpi.title === 'Profit') return 'bg-indigo-50 dark:bg-indigo-900/30'
+      return 'bg-gray-50 dark:bg-gray-700'
+    }
+
+    const getFinancialIconVariant = (kpi) => {
+      if (kpi.title === 'Cash In') return 'gradient-green'
+      if (kpi.title === 'Cash Out') return 'gradient-red'
+      if (kpi.title === 'Closing Balance') return 'gradient-blue'
+      if (kpi.title === 'Profit') return 'gradient-purple'
+      return 'gradient-blue'
+    }
 
     // Chart options
     const chartOptions = {
@@ -300,6 +377,11 @@ export default {
             icon: iconComponents[kpi.icon] || markRaw(CurrencyIcon)
           }))
           
+          dashboardData.financialKpis = (response.data.financialKpis || []).map(kpi => ({
+            ...kpi,
+            icon: iconComponents[kpi.icon] || markRaw(CurrencyIcon)
+          }))
+          
           dashboardData.recentTransactions = response.data.recentTransactions
           dashboardData.lowStockCount = response.data.lowStockCount
           dashboardData.salesData = response.data.salesData
@@ -339,6 +421,12 @@ export default {
             trend: 'up',
             icon: markRaw(TrendingUpIcon)
           }
+        ]
+        dashboardData.financialKpis = [
+          { title: 'Cash In', value: 'PKR 0', change: '+0%', trend: 'up', icon: markRaw(TrendingUpIcon), subtitle: 'Customer receipts today' },
+          { title: 'Cash Out', value: 'PKR 0', change: '+0%', trend: 'up', icon: markRaw(CurrencyIcon), subtitle: 'Suppliers + Expenses' },
+          { title: 'Closing Balance', value: 'PKR 0', change: '+0%', trend: 'up', icon: markRaw(DollarIcon), subtitle: 'Daily Net Cash in Hand' },
+          { title: 'Profit', value: 'PKR 0', change: '+0%', trend: 'up', icon: markRaw(ShoppingBagIcon), subtitle: 'Daily Net Profit' }
         ]
         dashboardData.recentTransactions = []
         dashboardData.lowStockCount = 0
@@ -391,7 +479,10 @@ export default {
       route,
       formatCurrency,
       handleViewAllTransactions,
-      getKpiIconName
+      getKpiIconName,
+      getFinancialBorderClass,
+      getFinancialIconBg,
+      getFinancialIconVariant
     }
   },
   beforeUnmount() {

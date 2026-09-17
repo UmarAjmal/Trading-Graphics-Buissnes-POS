@@ -215,6 +215,11 @@ export default {
         if (path === '/sales/create') return 'sales.create'
         if (path.startsWith('/sales')) return 'sales.index'
         if (path.startsWith('/registers')) return 'registers.index'
+        if (path.startsWith('/returns/sales/create')) return 'returns.sales.create'
+        if (path.startsWith('/returns/sales')) return 'returns.sales.index'
+        if (path.startsWith('/returns/purchases/create')) return 'returns.purchases.create'
+        if (path.startsWith('/returns/purchases')) return 'returns.purchases.index'
+        if (path.startsWith('/reports/financial-audit')) return 'reports.financial-audit'
         if (path.startsWith('/reports/register')) return 'reports.register.index'
         if (path.startsWith('/reports/sales')) return 'reports.sales'
         if (path.startsWith('/reports/purchases')) return 'reports.purchases'
@@ -223,6 +228,9 @@ export default {
         if (path.startsWith('/reports/expenses')) return 'reports.expenses'
         if (path.startsWith('/reports/customers')) return 'reports.customers'
         if (path.startsWith('/reports/receivables')) return 'reports.receivables'
+        if (path.startsWith('/reports/payables')) return 'reports.payables'
+        if (path.startsWith('/reports/receipts')) return 'reports.receipts'
+        if (path.startsWith('/reports/payments')) return 'reports.payments'
         if (path.startsWith('/reports/suppliers')) return 'reports.suppliers'
         if (path.startsWith('/reports/all-parties-ledger')) return 'reports.all-parties-ledger'
         if (path.startsWith('/reports')) return 'reports.index'
@@ -241,6 +249,16 @@ export default {
       { name: 'Dashboard', route: 'dashboard', icon: 'home' },
       // { name: 'Generate Sale', route: 'pos', icon: 'calculator' },
       { name: 'Add Sale', route: 'sales.create', icon: 'plus-circle' },
+      { 
+        name: 'Returns', 
+        icon: 'arrow-uturn-left',
+        children: [
+          { name: 'Sale Return', route: 'returns.sales.index', icon: 'arrow-uturn-left' },
+          { name: 'Purchase Return', route: 'returns.purchases.index', icon: 'truck' },
+          { name: 'Add Sale Return', route: 'returns.sales.create', icon: 'plus' },
+          { name: 'Add Purchase Return', route: 'returns.purchases.create', icon: 'plus' },
+        ]
+      },
       { 
         name: 'Products', 
         icon: 'cube',
@@ -261,8 +279,8 @@ export default {
           { name: 'Supplier List', route: 'suppliers.index', icon: 'truck' }
         ]
       },
-      {
-        name: 'Expenses',
+      { 
+        name: 'Expenses', 
         icon: 'cash',
         children: [
           { name: 'Expense List', route: 'expenses.index', icon: 'list' },
@@ -278,15 +296,19 @@ export default {
         name: 'Reports', 
         icon: 'chart-bar',
         children: [
+          { name: 'Executive Financial Audit', route: 'reports.financial-audit', icon: 'clipboard-document-list' },
           { name: 'Sales Report', route: 'reports.sales', icon: 'trending-up' },
           { name: 'Purchase Report', route: 'reports.purchases', icon: 'shopping-cart' },
           { name: 'Profit Report', route: 'reports.profit', icon: 'currency-rupee' },
+          { name: 'Receipt Report (Cash In)', route: 'reports.receipts', icon: 'dollar' },
+          { name: 'Payment Report (Cash Out)', route: 'reports.payments', icon: 'credit-card' },
           { name: 'Stock Report', route: 'reports.stock', icon: 'archive' },
           { name: 'Register Report', route: 'reports.register.index', icon: 'clipboard-document-list' },
           { name: 'Expense Report', route: 'reports.expenses', icon: 'cash' },
           { name: 'Customer Reports', route: 'reports.customers', icon: 'users' },
           { name: 'Receivables Report', route: 'reports.receivables', icon: 'dollar' },
           { name: 'Supplier Reports', route: 'reports.suppliers', icon: 'truck' },
+          { name: 'Payables Report', route: 'reports.payables', icon: 'cash' },
           { name: 'All Parties Ledger', route: 'reports.all-parties-ledger', icon: 'book-open' }
         ]
       },

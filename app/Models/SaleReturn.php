@@ -18,6 +18,7 @@ class SaleReturn extends Model
         'tax_total',
         'other_adjustments',
         'grand_total',
+        'refund_type',
         'reason',
     ];
 
@@ -41,6 +42,11 @@ class SaleReturn extends Model
     }
 
     public function items(): HasMany
+    {
+        return $this->hasMany(SaleReturnItem::class);
+    }
+
+    public function saleReturnItems(): HasMany
     {
         return $this->hasMany(SaleReturnItem::class);
     }

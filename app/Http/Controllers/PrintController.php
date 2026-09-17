@@ -69,4 +69,43 @@ class PrintController extends Controller
         return response()->view('prints.return_80mm', compact('saleReturn', 'settings'))
             ->header('Content-Type', 'text/html');
     }
+
+    /**
+     * Print A4 purchase return memo
+     */
+    public function purchaseReturnA4(\App\Models\PurchaseReturn $purchaseReturn): Response
+    {
+        $purchaseReturn->load([
+            'purchase.supplier',
+            'supplier',
+            'user',
+            'items.product.unit',
+            'items.product.panaflexSpec',
+            'items.purchaseItem'
+        ]);
+        $settings = CompanySetting::first();
+
+        return response()->view('prints.purchase_return_a4', compact('purchaseReturn', 'settings'))
+            ->header('Content-Type', 'text/html');
+    }
+
+    /**
+     * Print 80mm purchase return memo
+     */
+    public function purchaseReturn80mm(\App\Models\PurchaseReturn $purchaseReturn): Response
+    {
+        $purchaseReturn->load([
+            'purchase.supplier',
+            'supplier',
+            'user',
+            'items.product.unit',
+            'items.product.panaflexSpec',
+            'items.purchaseItem'
+        ]);
+        $settings = CompanySetting::first();
+
+        return response()->view('prints.purchase_return_80mm', compact('purchaseReturn', 'settings'))
+            ->header('Content-Type', 'text/html');
+    }
 }
+

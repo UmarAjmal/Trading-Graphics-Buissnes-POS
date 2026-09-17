@@ -72,6 +72,14 @@ class Purchase extends Model
     }
 
     /**
+     * Get all returns for this purchase
+     */
+    public function returns(): HasMany
+    {
+        return $this->hasMany(PurchaseReturn::class);
+    }
+
+    /**
      * Generate next purchase number
      */
     public static function generatePurchaseNumber(): string

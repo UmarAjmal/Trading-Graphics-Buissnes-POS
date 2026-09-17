@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Product;
 use App\Models\Purchase;
+use App\Models\PurchaseReturn;
 use App\Models\Sale;
 use App\Models\SaleReturn;
 use App\Models\StockBatch;
@@ -295,10 +296,20 @@ class InventoryService
     private function restockPanaflexStock($returnItem, SaleReturn $return): void
     {
         $product = $returnItem->saleItem->product;
-        $rollWidthInch = $product->panaflexSpec->roll_width_inch;
+        $rollWidthInch = $product->panaflexSpec ? (float) $product->panaflexSpec->roll_width_inch : 126.0;
         
-        // Calculate meters to restock
-        $metersToRestock = RollConsumptionService::calcMetersUsed($returnItem->units_sqft, $rollWidthInch);
+        // Calculate linear meters to restock from units_sqft
+        if ($rollWidthInch > 0) {
+            $widthFeet = $rollWidthInch / 12.0;
+            $linearFeet = (float) $returnItem->units_sqft / $widthFeet;
+            $metersToRestock = round($linearFeet * 0.3048, 2);
+        } else {
+            $metersToRestock = round((float) $returnItem->units_sqft * 0.092903, 2);
+        }
+
+        if ($metersToRestock <= 0) {
+            $metersToRestock = 0.01;
+        }
 
         // Get recently depleted batches with matching width (LIFO - newest first)
         $batches = StockBatch::where('product_id', $product->id)
@@ -336,6 +347,233 @@ class InventoryService
         // Update product stock
         $product->increment('stock_meters', $metersToRestock);
         $product->increment('stock_quantity', $metersToRestock);
+    }
+
+    /**
+     * Deduct inventory for purchase return (goods sent back to supplier)
+     */
+    public function deductForPurchaseReturn(PurchaseReturn $return): void
+    {
+        DB::transaction(function () use ($return) {
+            foreach ($return->items as $returnItem) {
+                $product = $returnItem->product;
+                if (!$product) continue;
+
+                if ($product->type === 'simple') {
+                    $qtyToDeduct = (float) $returnItem->quantity;
+
+                    // Deduct from batches
+                    $batches = StockBatch::where('product_id', $product->id)
+                        ->where('qty_remaining', '>', 0)
+                        ->orderBy('received_at', 'desc')
+                        ->orderBy('id', 'desc')
+                        ->get();
+
+                    $remaining = $qtyToDeduct;
+                    foreach ($batches as $batch) {
+                        if ($remaining <= 0) break;
+                        $take = min((float)$batch->qty_remaining, $remaining);
+
+                        $batch->update([
+                            'qty_remaining' => (float)$batch->qty_remaining - $take
+                        ]);
+
+                        $this->createStockMove(
+                            $product->id,
+                            'return',
+                            $return->id,
+                            'purchase_returns',
+                            $batch->id,
+                            -$take,
+                            null,
+                            "Purchase Return {$return->return_no}"
+                        );
+
+                        $remaining -= $take;
+                    }
+
+                    $product->decrement('stock_quantity', $qtyToDeduct);
+                } elseif ($product->type === 'panaflex_roll') {
+                    $rollWidthInch = $returnItem->roll_width_inch ?? ($product->panaflexSpec->roll_width_inch ?? 126.0);
+
+                    if ((float)$returnItem->units_sqft > 0) {
+                        $widthFeet = $rollWidthInch > 0 ? ($rollWidthInch / 12.0) : 10.5;
+                        $totalMetersToDeduct = round(((float)$returnItem->units_sqft / ($widthFeet * 3.28)), 2);
+                    } else {
+                        $totalMetersToDeduct = (float) ($returnItem->roll_length_meter ?? 0) * (float) ($returnItem->rolls_count ?? 1);
+                        if ($totalMetersToDeduct <= 0 && $returnItem->quantity > 0) {
+                            $totalMetersToDeduct = (float) $returnItem->quantity;
+                        }
+                    }
+                    if ($totalMetersToDeduct <= 0) $totalMetersToDeduct = 0.01;
+
+                    $batchesQuery = StockBatch::where('product_id', $product->id)
+                        ->where('meters_remaining', '>', 0);
+                    if ($rollWidthInch) {
+                        $batchesQuery->where('roll_width_inch', $rollWidthInch);
+                    }
+                    $batches = $batchesQuery->orderBy('received_at', 'desc')->orderBy('id', 'desc')->get();
+
+                    $remaining = $totalMetersToDeduct;
+                    foreach ($batches as $batch) {
+                        if ($remaining <= 0) break;
+                        $take = min((float)$batch->meters_remaining, $remaining);
+
+                        $batch->update([
+                            'meters_remaining' => (float)$batch->meters_remaining - $take
+                        ]);
+
+                        $this->createStockMove(
+                            $product->id,
+                            'return',
+                            $return->id,
+                            'purchase_returns',
+                            $batch->id,
+                            null,
+                            -$take,
+                            "Purchase Return {$return->return_no}"
+                        );
+
+                        $remaining -= $take;
+                    }
+
+                    $product->decrement('stock_meters', $totalMetersToDeduct);
+                    $product->decrement('stock_quantity', $totalMetersToDeduct);
+                }
+            }
+        });
+    }
+
+    /**
+     * Reverse stock added by a Sale Return (deduct it back)
+     */
+    public function reverseSaleReturnStock(SaleReturn $return): void
+    {
+        DB::transaction(function () use ($return) {
+            foreach ($return->saleReturnItems as $returnItem) {
+                $saleItem = $returnItem->saleItem;
+                $product = $saleItem ? $saleItem->product : null;
+                if (!$product) continue;
+
+                if ($product->type === 'simple') {
+                    $qtyToDeduct = (float) $returnItem->quantity;
+                    $batches = StockBatch::where('product_id', $product->id)
+                        ->where('qty_remaining', '>', 0)
+                        ->orderBy('received_at', 'desc')
+                        ->orderBy('id', 'desc')
+                        ->get();
+
+                    $remaining = $qtyToDeduct;
+                    foreach ($batches as $batch) {
+                        if ($remaining <= 0) break;
+                        $take = min((float)$batch->qty_remaining, $remaining);
+                        $batch->decrement('qty_remaining', $take);
+                        $remaining -= $take;
+                    }
+                    $product->decrement('stock_quantity', $qtyToDeduct);
+                } elseif ($product->type === 'panaflex_roll') {
+                    $rollWidthInch = $product->panaflexSpec ? (float) $product->panaflexSpec->roll_width_inch : 126.0;
+                    if ($rollWidthInch > 0) {
+                        $widthFeet = $rollWidthInch / 12.0;
+                        $linearFeet = (float) $returnItem->units_sqft / $widthFeet;
+                        $metersToDeduct = round($linearFeet * 0.3048, 2);
+                    } else {
+                        $metersToDeduct = round((float) $returnItem->units_sqft * 0.092903, 2);
+                    }
+                    if ($metersToDeduct <= 0) $metersToDeduct = 0.01;
+
+                    $batches = StockBatch::where('product_id', $product->id)
+                        ->where('meters_remaining', '>', 0)
+                        ->orderBy('received_at', 'desc')
+                        ->orderBy('id', 'desc')
+                        ->get();
+
+                    $remaining = $metersToDeduct;
+                    foreach ($batches as $batch) {
+                        if ($remaining <= 0) break;
+                        $take = min((float)$batch->meters_remaining, $remaining);
+                        $batch->decrement('meters_remaining', $take);
+                        $remaining -= $take;
+                    }
+                    $product->decrement('stock_meters', $metersToDeduct);
+                    $product->decrement('stock_quantity', $metersToDeduct);
+                }
+            }
+            // Delete related stock_moves
+            \App\Models\StockMove::where('ref_table', 'sale_returns')->where('ref_id', $return->id)->delete();
+        });
+    }
+
+    /**
+     * Reverse stock deducted by a Purchase Return (add it back)
+     */
+    public function reversePurchaseReturnStock(PurchaseReturn $return): void
+    {
+        DB::transaction(function () use ($return) {
+            foreach ($return->items as $returnItem) {
+                $product = $returnItem->product;
+                if (!$product) continue;
+
+                if ($product->type === 'simple') {
+                    $qtyToAdd = (float) $returnItem->quantity;
+                    $batches = StockBatch::where('product_id', $product->id)
+                        ->orderBy('received_at', 'desc')
+                        ->orderBy('id', 'desc')
+                        ->get();
+
+                    $remaining = $qtyToAdd;
+                    foreach ($batches as $batch) {
+                        if ($remaining <= 0) break;
+                        $canAdd = (float)$batch->qty_total - (float)$batch->qty_remaining;
+                        if ($canAdd > 0) {
+                            $add = min($canAdd, $remaining);
+                            $batch->increment('qty_remaining', $add);
+                            $remaining -= $add;
+                        }
+                    }
+                    if ($remaining > 0 && $batches->isNotEmpty()) {
+                        $batches->first()->increment('qty_remaining', $remaining);
+                    }
+                    $product->increment('stock_quantity', $qtyToAdd);
+                } elseif ($product->type === 'panaflex_roll') {
+                    $rollWidthInch = $returnItem->roll_width_inch ?? ($product->panaflexSpec->roll_width_inch ?? 126.0);
+
+                    if ((float)$returnItem->units_sqft > 0) {
+                        $widthFeet = $rollWidthInch > 0 ? ($rollWidthInch / 12.0) : 10.5;
+                        $totalMetersToAdd = round(((float)$returnItem->units_sqft / ($widthFeet * 3.28)), 2);
+                    } else {
+                        $totalMetersToAdd = (float) ($returnItem->roll_length_meter ?? 0) * (float) ($returnItem->rolls_count ?? 1);
+                        if ($totalMetersToAdd <= 0 && $returnItem->quantity > 0) {
+                            $totalMetersToAdd = (float) $returnItem->quantity;
+                        }
+                    }
+                    if ($totalMetersToAdd <= 0) $totalMetersToAdd = 0.01;
+
+                    $batches = StockBatch::where('product_id', $product->id)
+                        ->orderBy('received_at', 'desc')
+                        ->orderBy('id', 'desc')
+                        ->get();
+
+                    $remaining = $totalMetersToAdd;
+                    foreach ($batches as $batch) {
+                        if ($remaining <= 0) break;
+                        $canAdd = (float)$batch->meters_total - (float)$batch->meters_remaining;
+                        if ($canAdd > 0) {
+                            $add = min($canAdd, $remaining);
+                            $batch->increment('meters_remaining', $add);
+                            $remaining -= $add;
+                        }
+                    }
+                    if ($remaining > 0 && $batches->isNotEmpty()) {
+                        $batches->first()->increment('meters_remaining', $remaining);
+                    }
+                    $product->increment('stock_meters', $totalMetersToAdd);
+                    $product->increment('stock_quantity', $totalMetersToAdd);
+                }
+            }
+            // Delete related stock moves
+            \App\Models\StockMove::where('ref_table', 'purchase_returns')->where('ref_id', $return->id)->delete();
+        });
     }
 
     /**

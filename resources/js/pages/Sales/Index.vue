@@ -105,7 +105,16 @@
               <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 <tr v-for="sale in sales" :key="sale.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {{ sale.invoice_number }}
+                    <div class="flex items-center gap-1.5">
+                      <span>{{ sale.invoice_number }}</span>
+                      <span
+                        v-if="sale.returns && sale.returns.length > 0"
+                        class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300"
+                        title="This invoice has returns"
+                      >
+                        Returned
+                      </span>
+                    </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                     {{ sale.customer?.name || 'Walk-in Customer' }}

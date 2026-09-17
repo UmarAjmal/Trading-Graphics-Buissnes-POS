@@ -1,0 +1,90 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class PurchaseReturn extends Model
+{
+    protected $fillable = [
+        'purchase_id',
+        'supplier_id',
+        'user_id',
+        'return_no',
+        'returned_at',
+        'subtotal',
+        'discount_total',
+        'tax_total',
+        'other_adjustments',
+        'grand_total',
+        'refund_type',
+        'reason',
+    ];
+
+    protected $casts = [
+        'returned_at' => 'datetime',
+        'subtotal' => 'decimal:2',
+        'discount_total' => 'decimal:2',
+        'tax_total' => 'decimal:2',
+        'other_adjustments' => 'decimal:2',
+        'grand_total' => 'decimal:2',
+    ];
+
+    public function purchase(): BelongsTo
+    {
+        return $this->belongsTo(Purchase::class);
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(PurchaseReturnItem::class);
+    }
+
+    public function purchaseReturnItems(): HasMany
+    {
+        return $this->hasMany(PurchaseReturnItem::class);
+    }
+
+    /**
+     * Generate next purchase return number
+     */
+    public static function generateReturnNo(): string
+    {
+        $prefix = config('app.purchase_return_prefix', 'PRTN-');
+        $lastReturn = static::orderBy('id', 'desc')->first();
+        
+        if (!$lastReturn) {
+            return $prefix . '0000001';
+        }
+
+        $lastNumber = (int) str_replace($prefix, '', $lastReturn->return_no);
+        $nextNumber = $lastNumber + 1;
+
+        return $prefix . str_pad($nextNumber, 7, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Calculate totals
+     */
+    public function calculateTotals(): void
+    {
+        $subtotal = $this->items()->sum('line_total');
+        
+        $this->update([
+            'subtotal' => $subtotal,
+            'grand_total' => $subtotal - $this->discount_total + $this->tax_total + $this->other_adjustments,
+        ]);
+    }
+}

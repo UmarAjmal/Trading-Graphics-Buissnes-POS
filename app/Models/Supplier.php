@@ -50,42 +50,34 @@ class Supplier extends Model
     }
 
     /**
+     * Get all purchase returns for this supplier
+     */
+    public function returns(): HasMany
+    {
+        return $this->hasMany(PurchaseReturn::class);
+    }
+
+    /**
      * Calculate current balance
      * Positive = We owe supplier (Credit)
      * Negative = Supplier owes us (Debit/Advance)
      */
     public function getBalanceAttribute()
     {
-        $totalPurchases = $this->purchases()->where('status', '!=', 'cancelled')->sum('grand_total');
-        
-        // Include old payments from PendingPayments table (if used for historic tracking)
-        // Note: For suppliers, PendingPayment usually tracks "opening balance due" via purchase, not payments made.
-        // Assuming typical usage: Debt - Payments
+        $totalPurchases = (float) $this->purchases()->where('status', '!=', 'cancelled')->sum('grand_total');
+        $totalReturns = (float) $this->returns()->sum('grand_total');
         
         // New payments (Ledger)
-        // Paid = We paid supplier (Reduces Debt)
-        // Exclude payments linked to purchases (Cash Purchases) if any existed?
-        // Usually purchase creation shouldn't double count.
-        // Assuming PaymentController creates payments with purchase_id=null
-        $totalNewPaid = $this->payments()
+        $totalNewPaid = (float) $this->payments()
             ->where('type', 'paid')
-            ->whereNull('purchase_id')
             ->sum('amount');
             
-        // Received = Supplier refunded us (Increases Debt)
-        $totalNewReceived = $this->payments()
+        $totalNewReceived = (float) $this->payments()
             ->where('type', 'received')
-            ->whereNull('purchase_id')
             ->sum('amount');
         
-        // Balance = Purchases - (Paid - Received)
-        // Note: We do NOT add opening_balance etc if it's already in Purchases
+        $totalOldPayments = (float) $this->pendingPayments()->where('amount', '>', 0)->sum('amount');
         
-        // If PendingPayments creates a duplicate tracking issue, verify its usage. 
-        // Suppliers usually don't use PendingPayment for tracking *paid* amounts.
-        // If PendingPayment has 'amount' field populated with historic payments, use it.
-        $totalOldPayments = $this->pendingPayments()->sum('amount');
-        
-        return $totalPurchases - ($totalOldPayments + $totalNewPaid - $totalNewReceived);
+        return ($totalPurchases - $totalReturns) - ($totalOldPayments + $totalNewPaid - $totalNewReceived);
     }
 }

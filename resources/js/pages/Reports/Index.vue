@@ -6,6 +6,29 @@
     />
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Primary Executive Financial Audit Card -->
+      <div 
+        class="md:col-span-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 rounded-xl shadow-lg hover:shadow-xl p-6 text-white cursor-pointer transition-all duration-300 hover:-translate-y-1 relative overflow-hidden"
+        @click="navigateToReport('financial-audit')"
+      >
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm mb-2 text-white border border-white/20">
+              <span>⭐</span>
+              <span>ALL-IN-ONE BUSINESS AUDIT</span>
+            </div>
+            <h3 class="text-2xl font-black text-white">Executive Financial & Audit Report (مکمل مالیاتی و آڈٹ سمری)</h3>
+            <p class="text-blue-100 text-sm mt-1 max-w-2xl">
+              Complete consolidated business audit: Net Profit, Gross Profit, Sales, Purchases, Cash In/Out (Galla & Bank), Market Receivables & Payables, Expenses, and Godown Stock Value with Daily/Weekly/15-Day/Monthly/Yearly audit timelines.
+            </p>
+          </div>
+          <div class="flex items-center gap-2 bg-white text-blue-900 font-bold px-5 py-2.5 rounded-xl shadow-md text-sm whitespace-nowrap self-start md:self-auto hover:bg-blue-50 transition">
+            <span>View Executive Audit</span>
+            <span>→</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Report Cards -->
       <ReportCard
         title="Sales Report"
@@ -32,15 +55,39 @@
         @click="navigateToReport('customers')"
       />
       <ReportCard
+        title="Receivables Report"
+        description="Overview of all customer balances, receivables, and advances"
+        color="indigo"
+        @click="navigateToReport('receivables')"
+      />
+      <ReportCard
         title="Supplier Reports"
         description="Track supplier ledger with purchases, payments, and prepayments"
         color="green"
         @click="navigateToReport('suppliers')"
       />
       <ReportCard
+        title="Payables Report"
+        description="Overview of all supplier balances, payables, and prepaid advances"
+        color="amber"
+        @click="navigateToReport('payables')"
+      />
+      <ReportCard
+        title="Receipt Report (Cash In)"
+        description="Comprehensive customer collections, cash receipts, and inflow audit"
+        color="emerald"
+        @click="navigateToReport('receipts')"
+      />
+      <ReportCard
+        title="Payment Report (Cash Out)"
+        description="Comprehensive supplier payments, cash disbursements, and outflow audit"
+        color="rose"
+        @click="navigateToReport('payments')"
+      />
+      <ReportCard
         title="All Parties Ledger"
         description="Combined summary of all Customers and Suppliers with balances"
-        color="indigo"
+        color="purple"
         @click="navigateToReport('all-parties-ledger')"
       />
     </div>

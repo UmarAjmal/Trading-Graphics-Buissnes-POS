@@ -6,8 +6,10 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Product;
 use App\Models\Customer;
+use App\Models\Supplier;
 use App\Models\Purchase;
 use App\Models\Expense;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -682,10 +684,13 @@ class ReportController extends Controller
 
         // 5.5 Get Daily Expenses
         $expensesData = \App\Models\Expense::whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
-            ->selectRaw('date, SUM(amount) as total_amount')
-            ->groupBy('date')
             ->get()
-            ->keyBy('date');
+            ->groupBy(function($expense) {
+                return Carbon::parse($expense->date)->format('Y-m-d');
+            })
+            ->map(function($items) {
+                return (float) $items->sum('amount');
+            });
 
         // 6. Merge and Calculate Daily Stats
         $allDates = array_unique(array_merge(
@@ -703,7 +708,7 @@ class ReportController extends Controller
             $dayReturns = $returnsByDate[$date]['returns'] ?? 0;
             $dayReturnCogs = $returnsByDate[$date]['returns_cogs'] ?? 0;
             
-            $dayExpenses = $expensesData[$date]->total_amount ?? 0;
+            $dayExpenses = $expensesData[$date] ?? 0;
 
             $netDaySales = $daySales - $dayReturns;
             $netDayCogs = $daySaleCogs - $dayReturnCogs;
@@ -1098,7 +1103,7 @@ class ReportController extends Controller
                 $transactions = collect();
                 
                 // 1. Calculate Opening Balance
-                // Formula: Sales - Returns - Payments - Advances(Received)
+                // Formula: (Sales + Refunds Paid) - (Returns + Payments Received + Advances + Credit Payments)
                 
                 $salesBefore = Sale::where('customer_id', $customerId)
                     ->where('sold_at', '<', $dateFrom)
@@ -1114,15 +1119,23 @@ class ReportController extends Controller
                     ->where('type', 'received')
                     ->where('payment_date', '<', $dateFrom)
                     ->sum('amount');
+
+                $refundsBefore = \App\Models\Payment::where('customer_id', $customerId)
+                    ->where('type', 'paid')
+                    ->where('payment_date', '<', $dateFrom)
+                    ->sum('amount');
                     
                 // Only include POSITIVE advances (Money received)
                 $advancesBefore = \App\Models\CustomerAdvance::where('customer_id', $customerId)
                     ->where('amount', '>', 0)
                     ->where('created_at', '<', $dateFrom)
                     ->sum('amount');
+
+                $creditPaymentsBefore = \App\Models\CustomerCreditPayment::where('customer_id', $customerId)
+                    ->where('created_at', '<', $dateFrom)
+                    ->sum('amount');
                 
-                // Note: We subtract payments and advances because they are Credits (reduce the debt)
-                $openingBalance = $salesBefore - $returnsBefore - $paymentsBefore - $advancesBefore;
+                $openingBalance = ($salesBefore + $refundsBefore) - ($returnsBefore + $paymentsBefore + $advancesBefore + $creditPaymentsBefore);
                 
                 // Add Opening Balance Row
                 $transactions->push([
@@ -1174,13 +1187,15 @@ class ReportController extends Controller
                         $q->where('customer_id', $customerId);
                     })
                     ->whereBetween('returned_at', [$dateFrom, $dateTo])
+                    ->with('sale')
                     ->get();
                     
                 foreach ($returns as $ret) {
+                    $invNo = $ret->sale ? $ret->sale->invoice_no : '';
                     $transactions->push([
                         'date' => $ret->returned_at,
                         'type' => 'return',
-                        'description' => 'Sales Return',
+                        'description' => 'Sales Return' . ($ret->return_no ? " #{$ret->return_no}" : '') . ($invNo ? " (Inv #{$invNo})" : ''),
                         'debit' => 0,
                         'credit' => $ret->grand_total,
                         'voucher_no' => $ret->return_no ?? '-',
@@ -1194,19 +1209,18 @@ class ReportController extends Controller
                     ->get();
                     
                 foreach ($payments as $pay) {
-                    // Skip if this is an initial payment for a sale we already processed
-                    // Logic: Has sale_id AND sale exists in our list AND time difference is small (< 10 mins)
-                    if ($pay->sale_id && isset($saleTimestamps[$pay->sale_id])) {
+                    // Only skip initial received sale payments that are already merged in the Sale row
+                    if ($pay->type === 'received' && $pay->sale_id && isset($saleTimestamps[$pay->sale_id])) {
                         $saleTime = Carbon::parse($saleTimestamps[$pay->sale_id]);
-                        $payTime = Carbon::parse($pay->created_at); // Use created_at for precision
+                        $payTime = Carbon::parse($pay->created_at);
                         
-                        if ($payTime->diffInMinutes($saleTime) < 10) {
+                        if (abs($payTime->diffInMinutes($saleTime, false)) < 5) {
                             continue; // Skip this payment as it's merged into Sale row
                         }
                     }
 
                     $isReceived = $pay->type === 'received';
-                    $desc = $isReceived ? 'Cash Received' : 'Cash Paid';
+                    $desc = $isReceived ? 'Cash Received' : 'Cash/Bank Refund Paid';
                     if ($pay->note) {
                         $desc .= ' - ' . $pay->note;
                     }
@@ -1221,7 +1235,7 @@ class ReportController extends Controller
                         'description' => $desc,
                         'debit' => $isReceived ? 0 : $pay->amount,
                         'credit' => $isReceived ? $pay->amount : 0,
-                        'voucher_no' => $pay->id,
+                        'voucher_no' => 'PAY-' . $pay->id,
                         'data' => $pay
                     ]);
                 }
@@ -1236,12 +1250,12 @@ class ReportController extends Controller
                     if ($cPay->note) $desc .= ' - ' . $cPay->note;
 
                     $transactions->push([
-                        'date' => $cPay->created_at, // Use created_at as payment_date might be just date
+                        'date' => $cPay->created_at,
                         'type' => 'payment',
                         'description' => $desc,
                         'debit' => 0,
                         'credit' => $cPay->amount,
-                        'voucher_no' => $cPay->id,
+                        'voucher_no' => 'CPAY-' . $cPay->id,
                         'data' => $cPay
                     ]);
                 }
@@ -1271,7 +1285,7 @@ class ReportController extends Controller
                     $dateB = $b['date'] instanceof \Carbon\Carbon ? $b['date']->timestamp : strtotime($b['date']);
                     
                     if ($dateA === $dateB) {
-                        return strcmp($a['voucher_no'], $b['voucher_no']); // Secondary sort
+                        return strcmp($a['voucher_no'] ?? '', $b['voucher_no'] ?? ''); // Secondary sort
                     }
                     return $dateA <=> $dateB;
                 })->values();
@@ -1375,13 +1389,22 @@ class ReportController extends Controller
             ->where('type', 'received')
             ->where('payment_date', '<', $dateFrom)
             ->sum('amount');
+
+        $refundsBefore = \App\Models\Payment::where('customer_id', $customerId)
+            ->where('type', 'paid')
+            ->where('payment_date', '<', $dateFrom)
+            ->sum('amount');
             
         $advancesBefore = \App\Models\CustomerAdvance::where('customer_id', $customerId)
             ->where('amount', '>', 0)
             ->where('created_at', '<', $dateFrom)
             ->sum('amount');
+
+        $creditPaymentsBefore = \App\Models\CustomerCreditPayment::where('customer_id', $customerId)
+            ->where('created_at', '<', $dateFrom)
+            ->sum('amount');
         
-        $openingBalance = $salesBefore - $returnsBefore - $paymentsBefore - $advancesBefore;
+        $openingBalance = ($salesBefore + $refundsBefore) - ($returnsBefore + $paymentsBefore + $advancesBefore + $creditPaymentsBefore);
         
         $transactions->push([
             'date' => $dateFrom->copy()->subSecond(),
@@ -1426,13 +1449,15 @@ class ReportController extends Controller
                 $q->where('customer_id', $customerId);
             })
             ->whereBetween('returned_at', [$dateFrom, $dateTo])
+            ->with('sale')
             ->get();
             
         foreach ($returns as $ret) {
+            $invNo = $ret->sale ? $ret->sale->invoice_no : '';
             $transactions->push([
                 'date' => $ret->returned_at,
                 'type' => 'return',
-                'description' => 'Sales Return',
+                'description' => 'Sales Return' . ($ret->return_no ? " #{$ret->return_no}" : '') . ($invNo ? " (Inv #{$invNo})" : ''),
                 'debit' => 0,
                 'credit' => $ret->grand_total,
                 'voucher_no' => $ret->return_no ?? '-',
@@ -1445,16 +1470,16 @@ class ReportController extends Controller
             ->get();
             
         foreach ($payments as $pay) {
-            if ($pay->sale_id && isset($saleTimestamps[$pay->sale_id])) {
+            if ($pay->type === 'received' && $pay->sale_id && isset($saleTimestamps[$pay->sale_id])) {
                 $saleTime = Carbon::parse($saleTimestamps[$pay->sale_id]);
                 $payTime = Carbon::parse($pay->created_at);
-                if ($payTime->diffInMinutes($saleTime) < 10) {
+                if (abs($payTime->diffInMinutes($saleTime, false)) < 5) {
                     continue; 
                 }
             }
 
             $isReceived = $pay->type === 'received';
-            $desc = $isReceived ? 'Cash Received' : 'Cash Paid';
+            $desc = $isReceived ? 'Cash Received' : 'Cash/Bank Refund Paid';
             if ($pay->note) $desc .= ' - ' . $pay->note;
             
             $sortDate = $pay->created_at->isSameDay($pay->payment_date) ? $pay->created_at : $pay->payment_date;
@@ -1465,7 +1490,7 @@ class ReportController extends Controller
                 'description' => $desc,
                 'debit' => $isReceived ? 0 : $pay->amount,
                 'credit' => $isReceived ? $pay->amount : 0,
-                'voucher_no' => $pay->id,
+                'voucher_no' => 'PAY-' . $pay->id,
                 'data' => $pay
             ]);
         }
@@ -1484,7 +1509,7 @@ class ReportController extends Controller
                 'description' => $desc,
                 'debit' => 0,
                 'credit' => $cPay->amount,
-                'voucher_no' => $cPay->id,
+                'voucher_no' => 'CPAY-' . $cPay->id,
                 'data' => $cPay
             ]);
         }
@@ -1506,7 +1531,14 @@ class ReportController extends Controller
             ]);
         }
 
-        $sortedTransactions = $transactions->sortBy('date')->values();
+        $sortedTransactions = $transactions->sort(function ($a, $b) {
+            $dateA = $a['date'] instanceof \Carbon\Carbon ? $a['date']->timestamp : strtotime($a['date']);
+            $dateB = $b['date'] instanceof \Carbon\Carbon ? $b['date']->timestamp : strtotime($b['date']);
+            if ($dateA === $dateB) {
+                return strcmp($a['voucher_no'] ?? '', $b['voucher_no'] ?? '');
+            }
+            return $dateA <=> $dateB;
+        })->values();
         
         $runningBalance = 0;
         
@@ -1559,164 +1591,191 @@ class ReportController extends Controller
             return back()->with('error', 'Customer not found');
         }
         
-        $ledger = [];
+        $transactions = collect();
         
-        // Calculate Opening Balance
-        // First, get the OPB (Opening Balance) entry if it exists
-        $opbSale = Sale::where('customer_id', $customerId)
-            ->where('invoice_no', 'like', 'OPB-%')
-            ->first();
-        
-        $opbAmount = $opbSale ? $opbSale->bill_total : 0;
-        
-        // Then get all previous transactions (excluding OPB as it's already counted)
-        $prevSales = Sale::where('customer_id', $customerId)
-            ->where('invoice_no', 'not like', 'OPB-%')
-            ->where('created_at', '<', $dateFrom)
+        // 1. Calculate Opening Balance
+        $salesBefore = Sale::where('customer_id', $customerId)
+            ->where('sold_at', '<', $dateFrom)
             ->sum('bill_total');
             
-        $prevReturns = \App\Models\SaleReturn::whereHas('sale', function($q) use ($customerId) {
+        $returnsBefore = \App\Models\SaleReturn::whereHas('sale', function($q) use ($customerId) {
                 $q->where('customer_id', $customerId);
             })
             ->where('returned_at', '<', $dateFrom)
             ->sum('grand_total');
             
-        $prevPayments = \App\Models\CustomerCreditPayment::where('customer_id', $customerId)
-            ->where('created_at', '<', $dateFrom)
+        $paymentsBefore = \App\Models\Payment::where('customer_id', $customerId)
+            ->where('type', 'received')
+            ->where('payment_date', '<', $dateFrom)
+            ->sum('amount');
+
+        $refundsBefore = \App\Models\Payment::where('customer_id', $customerId)
+            ->where('type', 'paid')
+            ->where('payment_date', '<', $dateFrom)
             ->sum('amount');
             
-        $prevAdvances = \App\Models\CustomerAdvance::where('customer_id', $customerId)
+        $advancesBefore = \App\Models\CustomerAdvance::where('customer_id', $customerId)
+            ->where('amount', '>', 0)
+            ->where('created_at', '<', $dateFrom)
+            ->sum('amount');
+
+        $creditPaymentsBefore = \App\Models\CustomerCreditPayment::where('customer_id', $customerId)
             ->where('created_at', '<', $dateFrom)
             ->sum('amount');
         
-        $openingBalance = $opbAmount + $prevSales - ($prevReturns + $prevPayments + $prevAdvances);
-        $balance = $openingBalance;
-
-        // Add Opening Balance Row
-        $ledger[] = [
-            'date' => $dateFrom->copy()->subSecond(),
-            'description' => 'Opening Balance',
-            'sale_amount' => 0,
-            'payment' => 0,
-            'advance' => 0,
-            'return_amount' => 0,
-            'balance' => $openingBalance
-        ];
+        $openingBalance = ($salesBefore + $refundsBefore) - ($returnsBefore + $paymentsBefore + $advancesBefore + $creditPaymentsBefore);
         
-        // Get Current Transactions (excluding OPB sales)
+        $transactions->push([
+            'date' => $dateFrom->copy()->subSecond(),
+            'type' => 'opening_balance',
+            'description' => 'Opening Balance',
+            'debit' => $openingBalance > 0 ? $openingBalance : 0,
+            'credit' => $openingBalance < 0 ? abs($openingBalance) : 0,
+            'balance' => $openingBalance,
+            'formatted_date' => $dateFrom->format('Y-m-d'),
+            'voucher_no' => 'B/F'
+        ]);
+
+        // 2. Current Transactions
         $sales = Sale::where('customer_id', $customerId)
-            ->whereBetween('created_at', [$dateFrom, $dateTo])
-            ->where('invoice_no', 'not like', 'OPB-%') // Exclude Opening Balance entries
-            ->orderBy('created_at')
+            ->whereBetween('sold_at', [$dateFrom, $dateTo])
             ->get();
+        
+        $saleTimestamps = $sales->pluck('sold_at', 'id');
+
+        foreach ($sales as $sale) {
+            $isOpb = str_starts_with($sale->invoice_no, 'OPB-');
+            $cashPaid = $sale->paid_amount - ($sale->advance_used ?? 0);
+            $due = $sale->bill_total - $sale->paid_amount;
+            
+            $desc = $isOpb ? 'Opening Balance' : 'Sale Invoice';
+            if (!$isOpb && $cashPaid > 0) {
+                $desc .= " (Cash " . number_format($cashPaid, 0) . " / Due " . number_format($due, 0) . ")";
+            }
+
+            $transactions->push([
+                'date' => $sale->sold_at,
+                'type' => 'sale',
+                'description' => $desc,
+                'debit' => $sale->bill_total,
+                'credit' => $cashPaid > 0 ? $cashPaid : 0, 
+                'voucher_no' => $sale->invoice_no,
+                'data' => $sale
+            ]);
+        }
         
         $returns = \App\Models\SaleReturn::whereHas('sale', function($q) use ($customerId) {
                 $q->where('customer_id', $customerId);
             })
             ->whereBetween('returned_at', [$dateFrom, $dateTo])
             ->with('sale')
-            ->orderBy('returned_at')
             ->get();
+            
+        foreach ($returns as $ret) {
+            $invNo = $ret->sale ? $ret->sale->invoice_no : '';
+            $transactions->push([
+                'date' => $ret->returned_at,
+                'type' => 'return',
+                'description' => 'Sales Return' . ($ret->return_no ? " #{$ret->return_no}" : '') . ($invNo ? " (Inv #{$invNo})" : ''),
+                'debit' => 0,
+                'credit' => $ret->grand_total,
+                'voucher_no' => $ret->return_no ?? '-',
+                'data' => $ret
+            ]);
+        }
+        
+        $payments = \App\Models\Payment::where('customer_id', $customerId)
+            ->whereBetween('payment_date', [$dateFrom, $dateTo])
+            ->get();
+            
+        foreach ($payments as $pay) {
+            if ($pay->type === 'received' && $pay->sale_id && isset($saleTimestamps[$pay->sale_id])) {
+                $saleTime = Carbon::parse($saleTimestamps[$pay->sale_id]);
+                $payTime = Carbon::parse($pay->created_at);
+                if (abs($payTime->diffInMinutes($saleTime, false)) < 5) {
+                    continue; 
+                }
+            }
 
-        $advances = \App\Models\CustomerAdvance::where('customer_id', $customerId)
-            ->whereBetween('created_at', [$dateFrom, $dateTo])
-            ->orderBy('created_at')
-            ->get();
+            $isReceived = $pay->type === 'received';
+            $desc = $isReceived ? 'Cash Received' : 'Cash/Bank Refund Paid';
+            if ($pay->note) $desc .= ' - ' . $pay->note;
+            
+            $sortDate = $pay->created_at->isSameDay($pay->payment_date) ? $pay->created_at : $pay->payment_date;
+
+            $transactions->push([
+                'date' => $sortDate,
+                'type' => 'payment',
+                'description' => $desc,
+                'debit' => $isReceived ? 0 : $pay->amount,
+                'credit' => $isReceived ? $pay->amount : 0,
+                'voucher_no' => 'PAY-' . $pay->id,
+                'data' => $pay
+            ]);
+        }
         
         $creditPayments = \App\Models\CustomerCreditPayment::where('customer_id', $customerId)
             ->whereBetween('created_at', [$dateFrom, $dateTo])
-            ->orderBy('created_at')
             ->get();
-        
-        // Merge and Sort Transactions
-        $transactions = collect();
-        
-        foreach ($sales as $sale) {
+
+        foreach ($creditPayments as $cPay) {
+            $desc = 'Payment Received';
+            if ($cPay->note) $desc .= ' - ' . $cPay->note;
+
             $transactions->push([
-                'date' => $sale->created_at,
-                'type' => 'sale',
-                'data' => $sale
-            ]);
-        }
-        
-        foreach ($returns as $return) {
-            $transactions->push([
-                'date' => $return->returned_at,
-                'type' => 'return',
-                'data' => $return
-            ]);
-        }
-        
-        foreach ($advances as $advance) {
-            $transactions->push([
-                'date' => $advance->created_at,
-                'type' => 'advance',
-                'data' => $advance
-            ]);
-        }
-        
-        foreach ($creditPayments as $payment) {
-            $transactions->push([
-                'date' => $payment->created_at,
+                'date' => $cPay->created_at,
                 'type' => 'payment',
-                'data' => $payment
+                'description' => $desc,
+                'debit' => 0,
+                'credit' => $cPay->amount,
+                'voucher_no' => 'CPAY-' . $cPay->id,
+                'data' => $cPay
             ]);
         }
-        
-        $transactions = $transactions->sortBy('date');
-        
-        // Process Ledger Entries
-        $totalSales = 0;
-        $totalPayments = 0;
-        
-        foreach ($transactions as $transaction) {
-            $entry = [
-                'date' => $transaction['date'],
-                'description' => '',
-                'sale_amount' => 0,
-                'payment' => 0,
-                'advance' => 0,
-                'return_amount' => 0,
-                'balance' => 0
-            ];
+
+        $advances = \App\Models\CustomerAdvance::where('customer_id', $customerId)
+            ->where('amount', '>', 0)
+            ->whereBetween('created_at', [$dateFrom, $dateTo])
+            ->get();
             
-            if ($transaction['type'] === 'sale') {
-                $sale = $transaction['data'];
-                if ($sale->payment_type === 'cash') {
-                    $entry['description'] = "Cash Sale Invoice #{$sale->invoice_no}";
-                    $entry['sale_amount'] = $sale->bill_total;
-                    $entry['payment'] = $sale->bill_total;
-                    $totalSales += $sale->bill_total;
-                    $totalPayments += $sale->bill_total;
-                } else {
-                    $entry['description'] = "Credit Sale Invoice #{$sale->invoice_no}";
-                    $entry['sale_amount'] = $sale->bill_total;
-                    $balance += $sale->bill_total;
-                    $totalSales += $sale->bill_total;
-                }
-            } elseif ($transaction['type'] === 'return') {
-                $return = $transaction['data'];
-                $entry['description'] = "Sale Return (Invoice #{$return->sale->invoice_no})";
-                $entry['return_amount'] = $return->grand_total;
-                $balance -= $return->grand_total;
-                $totalPayments += $return->grand_total;
-            } elseif ($transaction['type'] === 'advance') {
-                $advance = $transaction['data'];
-                $entry['description'] = "Advance Payment";
-                $entry['advance'] = $advance->amount;
-                $balance -= $advance->amount;
-                $totalPayments += $advance->amount;
-            } elseif ($transaction['type'] === 'payment') {
-                $payment = $transaction['data'];
-                $entry['description'] = "Payment";
-                $entry['payment'] = $payment->amount;
-                $balance -= $payment->amount;
-                $totalPayments += $payment->amount;
-            }
-            
-            $entry['balance'] = $balance;
-            $ledger[] = $entry;
+        foreach ($advances as $adv) {
+            $transactions->push([
+                'date' => $adv->created_at,
+                'type' => 'advance',
+                'description' => 'Advance Received',
+                'debit' => 0,
+                'credit' => $adv->amount,
+                'voucher_no' => 'ADV-' . $adv->id,
+                'data' => $adv
+            ]);
         }
+
+        $sortedTransactions = $transactions->sort(function ($a, $b) {
+            $dateA = $a['date'] instanceof \Carbon\Carbon ? $a['date']->timestamp : strtotime($a['date']);
+            $dateB = $b['date'] instanceof \Carbon\Carbon ? $b['date']->timestamp : strtotime($b['date']);
+            if ($dateA === $dateB) {
+                return strcmp($a['voucher_no'] ?? '', $b['voucher_no'] ?? '');
+            }
+            return $dateA <=> $dateB;
+        })->values();
+        
+        $runningBalance = 0;
+        
+        $finalData = $sortedTransactions->map(function ($item) use (&$runningBalance) {
+            if ($item['type'] === 'opening_balance') {
+                $runningBalance = $item['balance'];
+            } else {
+                $runningBalance = $runningBalance + $item['debit'] - $item['credit'];
+                $item['balance'] = $runningBalance;
+            }
+            if (!isset($item['formatted_date'])) {
+                 $item['formatted_date'] = $item['date'] instanceof \Carbon\Carbon ? $item['date']->format('Y-m-d') : Carbon::parse($item['date'])->format('Y-m-d');
+            }
+            return $item;
+        });
+
+        $totalDebit = $finalData->where('type', '!=', 'opening_balance')->sum('debit');
+        $totalCredit = $finalData->where('type', '!=', 'opening_balance')->sum('credit');
 
         // Build CSV with header information
         $csv = config('app.name', 'POS System') . " - Customer Report\n";
@@ -1728,26 +1787,25 @@ class ReportController extends Controller
         
         // Add summary
         $csv .= "SUMMARY\n";
-        $csv .= "Total Sales,Rs " . number_format($totalSales, 2) . "\n";
-        $csv .= "Total Payments,Rs " . number_format($totalPayments, 2) . "\n";
-        $csv .= "Current Balance,Rs " . number_format(abs($balance), 2) . " " . ($balance >= 0 ? '(Receivable)' : '(Advance)') . "\n";
+        $csv .= "Total Debit (Sales/Refunds),Rs " . number_format($totalDebit, 2) . "\n";
+        $csv .= "Total Credit (Received/Returns),Rs " . number_format($totalCredit, 2) . "\n";
+        $csv .= "Current Balance,Rs " . number_format(abs($runningBalance), 2) . " " . ($runningBalance >= 0 ? '(Receivable)' : '(Advance)') . "\n";
         $csv .= "\n";
         
         // Add ledger header
         $csv .= "CUSTOMER LEDGER\n";
-        $csv .= "Sr,Date,Description,Debit,Credit,Balance\n";
+        $csv .= "Sr,Date,Description,Voucher No,Debit,Credit,Balance\n";
         
         // Add ledger entries
-        foreach ($ledger as $index => $entry) {
-            $credit = ($entry['payment'] ?? 0) + ($entry['advance'] ?? 0) + ($entry['return_amount'] ?? 0);
-            
-            $csv .= sprintf('%d,"%s","%s",%s,%s,%s' . "\n",
+        foreach ($finalData as $index => $entry) {
+            $csv .= sprintf('%d,"%s","%s","%s",%s,%s,%s' . "\n",
                 $index + 1,
-                Carbon::parse($entry['date'])->format('d M Y'),
-                $entry['description'],
-                $entry['sale_amount'] > 0 ? number_format($entry['sale_amount'], 2) : '0.00',
-                $credit > 0 ? number_format($credit, 2) : '0.00',
-                number_format(abs($entry['balance']), 2)
+                $entry['formatted_date'],
+                str_replace('"', '""', $entry['description']),
+                $entry['voucher_no'] ?? '-',
+                $entry['debit'] > 0 ? number_format($entry['debit'], 2) : '0.00',
+                $entry['credit'] > 0 ? number_format($entry['credit'], 2) : '0.00',
+                number_format(abs($entry['balance']), 2) . ($entry['balance'] < 0 ? ' (Adv)' : '')
             );
         }
 
@@ -1779,9 +1837,14 @@ class ReportController extends Controller
                 
                 // 1. Calculate Opening Balance
                 $prevPurchases = Purchase::where('supplier_id', $supplierId)
+                    ->where('status', '!=', 'cancelled')
                     ->where('created_at', '<', $dateFrom)
                     ->sum('grand_total');
                     
+                $prevReturns = \App\Models\PurchaseReturn::where('supplier_id', $supplierId)
+                    ->where('returned_at', '<', $dateFrom)
+                    ->sum('grand_total');
+
                 $prevPayments = \App\Models\PendingPayment::where('supplier_id', $supplierId)
                     ->where('created_at', '<', $dateFrom)
                     ->sum('amount');
@@ -1797,10 +1860,10 @@ class ReportController extends Controller
                     ->where('payment_date', '<', $dateFrom)
                     ->sum('amount');
                 
-                // For suppliers, Balance = Purchases - Payments - New Paid + New Received
-                $openingBalance = $prevPurchases - $prevPayments - $prevNewPaymentsPaid + $prevNewPaymentsReceived;
+                // For suppliers, Balance = (Purchases - Returns) - (Old Payments + New Paid - New Received)
+                $openingBalance = ($prevPurchases - $prevReturns) - ($prevPayments + $prevNewPaymentsPaid - $prevNewPaymentsReceived);
                 $balance = $openingBalance;
-                $prepaymentBalance = 0; // Reset for current period logic, or needs complex tracking
+                $prepaymentBalance = 0;
                 
                 // Add Opening Balance Row only if there is a balance
                 if ($openingBalance != 0) {
@@ -1816,13 +1879,20 @@ class ReportController extends Controller
                 
                 // 2. Get Current Transactions
                 $purchases = Purchase::where('supplier_id', $supplierId)
+                    ->where('status', '!=', 'cancelled')
                     ->whereBetween('created_at', [$dateFrom, $dateTo])
                     ->orderBy('created_at')
+                    ->get();
+
+                $returns = \App\Models\PurchaseReturn::where('supplier_id', $supplierId)
+                    ->whereBetween('returned_at', [$dateFrom, $dateTo])
+                    ->with('purchase')
+                    ->orderBy('returned_at')
                     ->get();
                 
                 $pendingPayments = \App\Models\PendingPayment::where('supplier_id', $supplierId)
                     ->whereBetween('created_at', [$dateFrom, $dateTo])
-                    ->where('amount', '>', 0) // Only include actual payments, not liability records
+                    ->where('amount', '>', 0)
                     ->orderBy('created_at')
                     ->get();
 
@@ -1842,6 +1912,14 @@ class ReportController extends Controller
                         'data' => $purchase
                     ]);
                 }
+
+                foreach ($returns as $return) {
+                    $transactions->push([
+                        'date' => $return->returned_at,
+                        'type' => 'return',
+                        'data' => $return
+                    ]);
+                }
                 
                 foreach ($pendingPayments as $payment) {
                     $transactions->push([
@@ -1852,7 +1930,6 @@ class ReportController extends Controller
                 }
 
                 foreach ($newPayments as $payment) {
-                    // Use payment_date but add the time from created_at to preserve entry order
                     $paymentDate = Carbon::parse($payment->payment_date);
                     $sortDate = $paymentDate->copy()->setTime(
                         $payment->created_at->hour,
@@ -1883,7 +1960,6 @@ class ReportController extends Controller
                     if ($transaction['type'] === 'purchase') {
                         $purchase = $transaction['data'];
                         
-                        // Check if it's an opening balance dummy purchase
                         if (str_starts_with($purchase->purchase_no, 'OPB-') || $purchase->notes === 'Opening Balance') {
                             $entry['description'] = 'Opening Balance';
                         } else {
@@ -1892,22 +1968,27 @@ class ReportController extends Controller
                         
                         $entry['purchase_amount'] = $purchase->grand_total;
                         
-                        // Check if prepayment was used
                         if ($prepaymentBalance < 0) {
                             $prepaymentUsed = min(abs($prepaymentBalance), $purchase->grand_total);
-                            $entry['prepayment'] = -$prepaymentUsed; // Negative means prepayment was used
+                            $entry['prepayment'] = -$prepaymentUsed;
                             $prepaymentBalance += $prepaymentUsed;
                             $balance += ($purchase->grand_total - $prepaymentUsed);
                         } else {
                             $balance += $purchase->grand_total;
                         }
+                    } elseif ($transaction['type'] === 'return') {
+                        $return = $transaction['data'];
+                        $billNo = $return->purchase ? $return->purchase->purchase_no : '';
+                        $entry['description'] = "Purchase Return #{$return->return_no}" . ($billNo ? " (Bill #{$billNo})" : "");
+                        $entry['payment'] = $return->grand_total;
+                        $balance -= $return->grand_total;
                     } elseif ($transaction['type'] === 'payment') {
                         $payment = $transaction['data'];
                         
                         if ($payment->is_prepayment) {
                             $entry['description'] = 'Prepayment for future order';
                             $entry['prepayment'] = $payment->amount;
-                            $prepaymentBalance -= $payment->amount; // Negative balance = we have prepaid
+                            $prepaymentBalance -= $payment->amount;
                             $balance -= $payment->amount;
                         } else {
                             $entry['description'] = 'Payment against invoice';
@@ -1921,8 +2002,8 @@ class ReportController extends Controller
                             $entry['payment'] = $payment->amount;
                             $balance -= $payment->amount;
                         } else {
-                            $entry['description'] = "Cash Received (Voucher)" . ($payment->note ? " - {$payment->note}" : "");
-                            $entry['purchase_amount'] = $payment->amount; // Treat as credit/purchase
+                            $entry['description'] = "Cash/Bank Refund Received (Voucher)" . ($payment->note ? " - {$payment->note}" : "");
+                            $entry['purchase_amount'] = $payment->amount;
                             $balance += $payment->amount;
                         }
                     }
@@ -1936,8 +2017,9 @@ class ReportController extends Controller
                     'ledger' => $ledger,
                     'summary' => [
                         'total_purchases' => $purchases->sum('grand_total'),
-                        'total_payments' => $pendingPayments->where('is_prepayment', false)->sum('amount'),
-                        'total_prepayments' => $pendingPayments->where('is_prepayment', true)->sum('amount'),
+                        'total_returns' => $returns->sum('grand_total'),
+                        'total_payments' => $pendingPayments->where('is_prepayment', false)->sum('amount') + $newPayments->where('type', 'paid')->sum('amount'),
+                        'total_received' => $newPayments->where('type', 'received')->sum('amount'),
                         'balance' => $balance
                     ]
                 ];
@@ -1973,14 +2055,29 @@ class ReportController extends Controller
         
         // Calculate Opening Balance
         $prevPurchases = Purchase::where('supplier_id', $supplierId)
+            ->where('status', '!=', 'cancelled')
             ->where('created_at', '<', $dateFrom)
+            ->sum('grand_total');
+
+        $prevReturns = \App\Models\PurchaseReturn::where('supplier_id', $supplierId)
+            ->where('returned_at', '<', $dateFrom)
             ->sum('grand_total');
             
         $prevPayments = \App\Models\PendingPayment::where('supplier_id', $supplierId)
             ->where('created_at', '<', $dateFrom)
             ->sum('amount');
+
+        $prevNewPaymentsPaid = \App\Models\Payment::where('supplier_id', $supplierId)
+            ->where('type', 'paid')
+            ->where('payment_date', '<', $dateFrom)
+            ->sum('amount');
+
+        $prevNewPaymentsReceived = \App\Models\Payment::where('supplier_id', $supplierId)
+            ->where('type', 'received')
+            ->where('payment_date', '<', $dateFrom)
+            ->sum('amount');
         
-        $openingBalance = $prevPurchases - $prevPayments;
+        $openingBalance = ($prevPurchases - $prevReturns) - ($prevPayments + $prevNewPaymentsPaid - $prevNewPaymentsReceived);
         $balance = $openingBalance;
 
         // Add Opening Balance Row
@@ -1997,13 +2094,26 @@ class ReportController extends Controller
         
         // Get Current Transactions
         $purchases = Purchase::where('supplier_id', $supplierId)
+            ->where('status', '!=', 'cancelled')
             ->whereBetween('created_at', [$dateFrom, $dateTo])
             ->orderBy('created_at')
+            ->get();
+
+        $returns = \App\Models\PurchaseReturn::where('supplier_id', $supplierId)
+            ->whereBetween('returned_at', [$dateFrom, $dateTo])
+            ->with('purchase')
+            ->orderBy('returned_at')
             ->get();
         
         $pendingPayments = \App\Models\PendingPayment::where('supplier_id', $supplierId)
             ->whereBetween('created_at', [$dateFrom, $dateTo])
+            ->where('amount', '>', 0)
             ->orderBy('created_at')
+            ->get();
+
+        $newPayments = \App\Models\Payment::where('supplier_id', $supplierId)
+            ->whereBetween('payment_date', [$dateFrom, $dateTo])
+            ->orderBy('payment_date')
             ->get();
         
         // Merge and Sort Transactions
@@ -2016,11 +2126,34 @@ class ReportController extends Controller
                 'data' => $purchase
             ]);
         }
+
+        foreach ($returns as $return) {
+            $transactions->push([
+                'date' => $return->returned_at,
+                'type' => 'return',
+                'data' => $return
+            ]);
+        }
         
         foreach ($pendingPayments as $payment) {
             $transactions->push([
                 'date' => $payment->created_at,
                 'type' => 'payment',
+                'data' => $payment
+            ]);
+        }
+
+        foreach ($newPayments as $payment) {
+            $paymentDate = Carbon::parse($payment->payment_date);
+            $sortDate = $paymentDate->copy()->setTime(
+                $payment->created_at->hour,
+                $payment->created_at->minute,
+                $payment->created_at->second
+            );
+
+            $transactions->push([
+                'date' => $sortDate,
+                'type' => 'new_payment',
                 'data' => $payment
             ]);
         }
@@ -2030,7 +2163,6 @@ class ReportController extends Controller
         // Process Ledger Entries
         $totalPurchases = 0;
         $totalPayments = 0;
-        $prepaymentBalance = 0;
         
         foreach ($transactions as $transaction) {
             $entry = [
@@ -2054,6 +2186,13 @@ class ReportController extends Controller
                 $entry['purchase_amount'] = $purchase->grand_total;
                 $balance += $purchase->grand_total;
                 $totalPurchases += $purchase->grand_total;
+            } elseif ($transaction['type'] === 'return') {
+                $return = $transaction['data'];
+                $billNo = $return->purchase ? $return->purchase->purchase_no : '';
+                $entry['description'] = "Purchase Return #{$return->return_no}" . ($billNo ? " (Bill #{$billNo})" : "");
+                $entry['payment'] = $return->grand_total;
+                $balance -= $return->grand_total;
+                $totalPayments += $return->grand_total;
             } elseif ($transaction['type'] === 'payment') {
                 $payment = $transaction['data'];
                 
@@ -2067,6 +2206,18 @@ class ReportController extends Controller
                     $balance -= $payment->amount;
                 }
                 $totalPayments += $payment->amount;
+            } elseif ($transaction['type'] === 'new_payment') {
+                $payment = $transaction['data'];
+                if ($payment->type === 'paid') {
+                    $entry['description'] = "Cash Paid (Voucher)" . ($payment->note ? " - {$payment->note}" : "");
+                    $entry['payment'] = $payment->amount;
+                    $balance -= $payment->amount;
+                    $totalPayments += $payment->amount;
+                } else {
+                    $entry['description'] = "Cash/Bank Refund Received (Voucher)" . ($payment->note ? " - {$payment->note}" : "");
+                    $entry['purchase_amount'] = $payment->amount;
+                    $balance += $payment->amount;
+                }
             }
             
             $entry['balance'] = $balance;
@@ -2112,14 +2263,29 @@ class ReportController extends Controller
         
         // Calculate Opening Balance
         $prevPurchases = Purchase::where('supplier_id', $supplierId)
+            ->where('status', '!=', 'cancelled')
             ->where('created_at', '<', $dateFrom)
+            ->sum('grand_total');
+
+        $prevReturns = \App\Models\PurchaseReturn::where('supplier_id', $supplierId)
+            ->where('returned_at', '<', $dateFrom)
             ->sum('grand_total');
             
         $prevPayments = \App\Models\PendingPayment::where('supplier_id', $supplierId)
             ->where('created_at', '<', $dateFrom)
             ->sum('amount');
+
+        $prevNewPaymentsPaid = \App\Models\Payment::where('supplier_id', $supplierId)
+            ->where('type', 'paid')
+            ->where('payment_date', '<', $dateFrom)
+            ->sum('amount');
+
+        $prevNewPaymentsReceived = \App\Models\Payment::where('supplier_id', $supplierId)
+            ->where('type', 'received')
+            ->where('payment_date', '<', $dateFrom)
+            ->sum('amount');
         
-        $openingBalance = $prevPurchases - $prevPayments;
+        $openingBalance = ($prevPurchases - $prevReturns) - ($prevPayments + $prevNewPaymentsPaid - $prevNewPaymentsReceived);
         $balance = $openingBalance;
 
         // Add Opening Balance Row
@@ -2136,13 +2302,26 @@ class ReportController extends Controller
         
         // Get Current Transactions
         $purchases = Purchase::where('supplier_id', $supplierId)
+            ->where('status', '!=', 'cancelled')
             ->whereBetween('created_at', [$dateFrom, $dateTo])
             ->orderBy('created_at')
+            ->get();
+
+        $returns = \App\Models\PurchaseReturn::where('supplier_id', $supplierId)
+            ->whereBetween('returned_at', [$dateFrom, $dateTo])
+            ->with('purchase')
+            ->orderBy('returned_at')
             ->get();
         
         $pendingPayments = \App\Models\PendingPayment::where('supplier_id', $supplierId)
             ->whereBetween('created_at', [$dateFrom, $dateTo])
+            ->where('amount', '>', 0)
             ->orderBy('created_at')
+            ->get();
+
+        $newPayments = \App\Models\Payment::where('supplier_id', $supplierId)
+            ->whereBetween('payment_date', [$dateFrom, $dateTo])
+            ->orderBy('payment_date')
             ->get();
         
         // Merge and Sort Transactions
@@ -2155,11 +2334,34 @@ class ReportController extends Controller
                 'data' => $purchase
             ]);
         }
+
+        foreach ($returns as $return) {
+            $transactions->push([
+                'date' => $return->returned_at,
+                'type' => 'return',
+                'data' => $return
+            ]);
+        }
         
         foreach ($pendingPayments as $payment) {
             $transactions->push([
                 'date' => $payment->created_at,
                 'type' => 'payment',
+                'data' => $payment
+            ]);
+        }
+
+        foreach ($newPayments as $payment) {
+            $paymentDate = Carbon::parse($payment->payment_date);
+            $sortDate = $paymentDate->copy()->setTime(
+                $payment->created_at->hour,
+                $payment->created_at->minute,
+                $payment->created_at->second
+            );
+
+            $transactions->push([
+                'date' => $sortDate,
+                'type' => 'new_payment',
                 'data' => $payment
             ]);
         }
@@ -2192,6 +2394,13 @@ class ReportController extends Controller
                 $entry['purchase_amount'] = $purchase->grand_total;
                 $balance += $purchase->grand_total;
                 $totalPurchases += $purchase->grand_total;
+            } elseif ($transaction['type'] === 'return') {
+                $return = $transaction['data'];
+                $billNo = $return->purchase ? $return->purchase->purchase_no : '';
+                $entry['description'] = "Purchase Return #{$return->return_no}" . ($billNo ? " (Bill #{$billNo})" : "");
+                $entry['payment'] = $return->grand_total;
+                $balance -= $return->grand_total;
+                $totalPayments += $return->grand_total;
             } elseif ($transaction['type'] === 'payment') {
                 $payment = $transaction['data'];
                 
@@ -2205,6 +2414,18 @@ class ReportController extends Controller
                     $balance -= $payment->amount;
                 }
                 $totalPayments += $payment->amount;
+            } elseif ($transaction['type'] === 'new_payment') {
+                $payment = $transaction['data'];
+                if ($payment->type === 'paid') {
+                    $entry['description'] = "Cash Paid (Voucher)" . ($payment->note ? " - {$payment->note}" : "");
+                    $entry['payment'] = $payment->amount;
+                    $balance -= $payment->amount;
+                    $totalPayments += $payment->amount;
+                } else {
+                    $entry['description'] = "Cash/Bank Refund Received (Voucher)" . ($payment->note ? " - {$payment->note}" : "");
+                    $entry['purchase_amount'] = $payment->amount;
+                    $balance += $payment->amount;
+                }
             }
             
             $entry['balance'] = $balance;
@@ -2479,12 +2700,12 @@ class ReportController extends Controller
             // Payments
             $payments = $customer->payments()->whereBetween('payment_date', [$start, $end])->get();
             foreach ($payments as $pay) {
-                // Skip if this is an initial payment for a sale we already processed
-                if ($pay->sale_id && isset($saleTimestamps[$pay->sale_id])) {
+                // Only skip initial received sale payments that are already merged in the Sale row
+                if ($pay->type === 'received' && $pay->sale_id && isset($saleTimestamps[$pay->sale_id])) {
                     $saleTime = \Carbon\Carbon::parse($saleTimestamps[$pay->sale_id]);
                     $payTime = \Carbon\Carbon::parse($pay->created_at); 
                     
-                    if ($payTime->diffInMinutes($saleTime) < 10) {
+                    if (abs($payTime->diffInMinutes($saleTime, false)) < 5) {
                         continue; 
                     }
                 }
@@ -2548,18 +2769,15 @@ class ReportController extends Controller
                 ->where('status', '!=', 'cancelled')
                 ->sum('grand_total');
                 
+            $returnsBefore = $supplier->returns()
+                ->where('returned_at', '<', $start)
+                ->sum('grand_total');
+
             $payPaidBefore = $supplier->payments()->where('type', 'paid')->where('payment_date', '<', $start)->sum('amount');
             $payRecBefore = $supplier->payments()->where('type', 'received')->where('payment_date', '<', $start)->sum('amount');
 
-            // Net Payable = Purchases - Payments
-            // If Positive: We Owe (Credit Balance in our Ledger logic where Bal = Dr - Cr, so Negative)
-            // Wait, earlier logic: Bal = Dr - Cr.
-            // Purchase = Credit. Payment = Debit.
-            // Bal = Payment - Purchase.
-            // If Purchase 100, Payment 0. Bal = -100. (We owe 100).
-            // So Initial Balance = (Payments - Purchases).
-            
-            $initialBalance = ($payPaidBefore - $payRecBefore) - $purchasesBefore;
+            // Net Balance = (Payments - Purchases) = (Payments - (Purchases - Returns))
+            $initialBalance = ($payPaidBefore - $payRecBefore) - ($purchasesBefore - $returnsBefore);
 
             $partyKey = 's_' . $supplier->id;
             $partyBalances[$partyKey] = $initialBalance;
@@ -2601,7 +2819,26 @@ class ReportController extends Controller
                 ]);
             }
 
-            // Payments (Debit)
+            // Purchase Returns (Debit)
+            $returns = $supplier->returns()
+                ->whereBetween('returned_at', [$start, $end])
+                ->with('purchase')
+                ->get();
+            foreach ($returns as $ret) {
+                $allTransactions->push([
+                    'date' => $ret->returned_at->format('Y-m-d'),
+                    'raw_date' => $ret->returned_at,
+                    'voucher_no' => $ret->return_no ?? '-',
+                    'party_name' => $supplier->name,
+                    'party_key' => $partyKey,
+                    'description' => 'Purchase Return' . ($ret->purchase ? " (Bill #{$ret->purchase->purchase_no})" : ''),
+                    'debit' => $ret->grand_total,
+                    'credit' => 0,
+                    'type' => 'return'
+                ]);
+            }
+
+            // Payments (Debit / Credit)
             $payments = $supplier->payments()->whereBetween('payment_date', [$start, $end])->get();
             foreach ($payments as $pay) {
                 $isPaid = $pay->type === 'paid'; // We paid supplier -> Debit Supplier
@@ -2916,5 +3153,1016 @@ class ReportController extends Controller
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'attachment; filename="receivables_report.pdf"');
     }
+
+    /**
+     * Display payables report (All Suppliers Balances)
+     */
+    public function payables(Request $request)
+    {
+        $type = $request->input('type', 'all'); // all, payable, advance
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        // If no date provided, use current date
+        $activeEndDate = $endDate ? $endDate : now()->format('Y-m-d');
+        
+        $query = Supplier::query()
+            ->withSum(['purchases as total_purchases' => function($q) use ($activeEndDate) {
+                $q->where('status', '!=', 'cancelled');
+                if ($activeEndDate) $q->whereDate('purchased_at', '<=', $activeEndDate);
+            }], 'grand_total')
+            ->withSum(['returns as total_returns' => function($q) use ($activeEndDate) {
+                if ($activeEndDate) $q->whereDate('returned_at', '<=', $activeEndDate);
+            }], 'grand_total')
+            ->withSum(['payments as total_paid' => function($q) use ($activeEndDate) {
+                $q->where('type', 'paid');
+                if ($activeEndDate) $q->whereDate('payment_date', '<=', $activeEndDate);
+            }], 'amount')
+            ->withSum(['payments as total_received' => function($q) use ($activeEndDate) {
+                $q->where('type', 'received');
+                if ($activeEndDate) $q->whereDate('payment_date', '<=', $activeEndDate);
+            }], 'amount')
+            ->withSum(['pendingPayments as total_old_payments' => function($q) use ($activeEndDate) {
+                if ($activeEndDate) $q->whereDate('created_at', '<=', $activeEndDate);
+            }], 'amount');
+
+        $suppliers = $query->get();
+        
+        $reportData = $suppliers->map(function ($supplier) {
+            // Balance = (Purchases - Returns) - (Old Payments + New Paid - New Received)
+            $balance = (($supplier->total_purchases ?? 0) - ($supplier->total_returns ?? 0)) 
+                     - (($supplier->total_old_payments ?? 0) + ($supplier->total_paid ?? 0) - ($supplier->total_received ?? 0));
+
+            return [
+                'id' => $supplier->id,
+                'name' => $supplier->name,
+                'phone' => $supplier->phone,
+                'contact_person' => $supplier->contact_person,
+                'address' => $supplier->address,
+                'balance' => $balance
+            ];
+        })->filter(function ($supplier) use ($type) {
+            // Remove zero balances (tolerance for float precision)
+            if (abs($supplier['balance']) < 1) return false;
+
+            if ($type === 'payable') return $supplier['balance'] > 0;
+            if ($type === 'advance') return $supplier['balance'] < 0;
+            
+            return true;
+        })->values();
+
+        // Sort by balance descending (highest debt first)
+        $reportData = $reportData->sortByDesc('balance')->values();
+
+        return Inertia::render('Reports/Payables', [
+            'suppliers' => $reportData,
+            'filters' => [
+                'type' => $type,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ]
+        ]);
+    }
+
+    public function exportPayablesPDF(Request $request)
+    {
+        $type = $request->input('type', 'all');
+        $endDate = $request->input('end_date');
+        $activeEndDate = $endDate ? $endDate : now()->format('Y-m-d');
+        
+        $query = Supplier::query()
+            ->withSum(['purchases as total_purchases' => function($q) use ($activeEndDate) {
+                $q->where('status', '!=', 'cancelled');
+                if ($activeEndDate) $q->whereDate('purchased_at', '<=', $activeEndDate);
+            }], 'grand_total')
+            ->withSum(['returns as total_returns' => function($q) use ($activeEndDate) {
+                if ($activeEndDate) $q->whereDate('returned_at', '<=', $activeEndDate);
+            }], 'grand_total')
+            ->withSum(['payments as total_paid' => function($q) use ($activeEndDate) {
+                $q->where('type', 'paid');
+                if ($activeEndDate) $q->whereDate('payment_date', '<=', $activeEndDate);
+            }], 'amount')
+            ->withSum(['payments as total_received' => function($q) use ($activeEndDate) {
+                $q->where('type', 'received');
+                if ($activeEndDate) $q->whereDate('payment_date', '<=', $activeEndDate);
+            }], 'amount')
+            ->withSum(['pendingPayments as total_old_payments' => function($q) use ($activeEndDate) {
+                if ($activeEndDate) $q->whereDate('created_at', '<=', $activeEndDate);
+            }], 'amount');
+            
+        $suppliers = $query->get();
+        
+        $reportData = $suppliers->map(function ($supplier) {
+            $balance = (($supplier->total_purchases ?? 0) - ($supplier->total_returns ?? 0)) 
+                     - (($supplier->total_old_payments ?? 0) + ($supplier->total_paid ?? 0) - ($supplier->total_received ?? 0));
+                     
+            return [
+                'id' => $supplier->id,
+                'name' => $supplier->name,
+                'phone' => $supplier->phone,
+                'contact_person' => $supplier->contact_person,
+                'address' => $supplier->address,
+                'balance' => $balance
+            ];
+        })->filter(function ($supplier) use ($type) {
+            if (abs($supplier['balance']) < 1) return false;
+            if ($type === 'payable') return $supplier['balance'] > 0;
+            if ($type === 'advance') return $supplier['balance'] < 0;
+            return true;
+        })->sortByDesc('balance')->values();
+
+        $data = [
+            'suppliers' => $reportData,
+            'type' => $type,
+            'generated_at' => \Carbon\Carbon::parse($activeEndDate)->format('F j, Y'),
+            'company' => \App\Models\CompanySetting::first(),
+        ];
+        
+        // Use Dompdf directly 
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'Arial');
+        
+        $dompdf = new \Dompdf\Dompdf($options);
+        $html = view('reports.payables-pdf', $data)->render();
+        
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait'); 
+        $dompdf->render();
+        
+        return response($dompdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="payables_report.pdf"');
+    }
+
+    /**
+     * Display Receipts Report (Cash In / Customer Collections)
+     */
+    public function receipts(Request $request)
+    {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $paymentMethod = $request->input('payment_method', 'all');
+        $customerId = $request->input('customer_id', 'all');
+        $search = $request->input('search');
+
+        $query = Payment::where(function($q) {
+                $q->whereNotNull('customer_id')->orWhere('type', 'received');
+            })
+            ->where('type', 'received')
+            ->with(['customer', 'user', 'sale']);
+
+        if ($startDate) {
+            $query->whereDate('payment_date', '>=', Carbon::parse($startDate)->toDateString());
+        }
+        if ($endDate) {
+            $query->whereDate('payment_date', '<=', Carbon::parse($endDate)->toDateString());
+        }
+        if ($paymentMethod && $paymentMethod !== 'all') {
+            if ($paymentMethod === 'bank_all') {
+                $query->whereIn('payment_method', ['bank', 'bank_transfer']);
+            } else {
+                $query->where('payment_method', $paymentMethod);
+            }
+        }
+        if ($customerId && $customerId !== 'all') {
+            $query->where('customer_id', $customerId);
+        }
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('note', 'like', "%{$search}%")
+                  ->orWhere('id', 'like', "%{$search}%")
+                  ->orWhereHas('customer', function($cq) use ($search) {
+                      $cq->where('name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $receipts = $query->orderBy('payment_date', 'desc')->orderBy('id', 'desc')->get();
+
+        // Calculate KPI summaries
+        $totalAmount = $receipts->sum('amount');
+        $cashAmount = $receipts->where('payment_method', 'cash')->sum('amount');
+        $bankAmount = $receipts->whereIn('payment_method', ['bank', 'bank_transfer'])->sum('amount');
+        $otherAmount = $totalAmount - $cashAmount - $bankAmount;
+        $totalCount = $receipts->count();
+        $avgAmount = $totalCount > 0 ? ($totalAmount / $totalCount) : 0;
+
+        $customers = Customer::orderBy('name')->select('id', 'name', 'phone')->get();
+
+        return Inertia::render('Reports/Receipts', [
+            'receipts' => $receipts,
+            'customers' => $customers,
+            'summary' => [
+                'total_amount' => $totalAmount,
+                'cash_amount' => $cashAmount,
+                'bank_amount' => $bankAmount,
+                'other_amount' => $otherAmount,
+                'total_count' => $totalCount,
+                'avg_amount' => $avgAmount,
+            ],
+            'filters' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'payment_method' => $paymentMethod,
+                'customer_id' => $customerId,
+                'search' => $search,
+            ]
+        ]);
+    }
+
+    /**
+     * Export Receipts PDF
+     */
+    public function exportReceiptsPDF(Request $request)
+    {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $paymentMethod = $request->input('payment_method', 'all');
+        $customerId = $request->input('customer_id', 'all');
+
+        $query = Payment::where(function($q) {
+                $q->whereNotNull('customer_id')->orWhere('type', 'received');
+            })
+            ->where('type', 'received')
+            ->with(['customer', 'user', 'sale']);
+
+        if ($startDate) {
+            $query->whereDate('payment_date', '>=', Carbon::parse($startDate)->toDateString());
+        }
+        if ($endDate) {
+            $query->whereDate('payment_date', '<=', Carbon::parse($endDate)->toDateString());
+        }
+        if ($paymentMethod && $paymentMethod !== 'all') {
+            if ($paymentMethod === 'bank_all') {
+                $query->whereIn('payment_method', ['bank', 'bank_transfer']);
+            } else {
+                $query->where('payment_method', $paymentMethod);
+            }
+        }
+        if ($customerId && $customerId !== 'all') {
+            $query->where('customer_id', $customerId);
+        }
+
+        $receipts = $query->orderBy('payment_date', 'asc')->orderBy('id', 'asc')->get();
+
+        $totalAmount = $receipts->sum('amount');
+        $cashAmount = $receipts->where('payment_method', 'cash')->sum('amount');
+        $bankAmount = $receipts->whereIn('payment_method', ['bank', 'bank_transfer'])->sum('amount');
+
+        $data = [
+            'receipts' => $receipts,
+            'summary' => [
+                'total_amount' => $totalAmount,
+                'cash_amount' => $cashAmount,
+                'bank_amount' => $bankAmount,
+                'count' => $receipts->count(),
+            ],
+            'filters' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'payment_method' => $paymentMethod,
+            ],
+            'company' => \App\Models\CompanySetting::first(),
+            'generated_at' => now()->format('F j, Y, g:i a')
+        ];
+
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'Arial');
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $html = view('reports.receipts-pdf', $data)->render();
+
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return response($dompdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="receipts_report.pdf"');
+    }
+
+    /**
+     * Display Payments Report (Cash Out / Supplier Payments & Outflows)
+     */
+    public function payments(Request $request)
+    {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $paymentMethod = $request->input('payment_method', 'all');
+        $supplierId = $request->input('supplier_id', 'all');
+        $search = $request->input('search');
+
+        $query = Payment::where('type', 'paid')
+            ->with(['supplier', 'customer', 'user', 'purchase']);
+
+        if ($startDate) {
+            $query->whereDate('payment_date', '>=', Carbon::parse($startDate)->toDateString());
+        }
+        if ($endDate) {
+            $query->whereDate('payment_date', '<=', Carbon::parse($endDate)->toDateString());
+        }
+        if ($paymentMethod && $paymentMethod !== 'all') {
+            if ($paymentMethod === 'bank_all') {
+                $query->whereIn('payment_method', ['bank', 'bank_transfer']);
+            } else {
+                $query->where('payment_method', $paymentMethod);
+            }
+        }
+        if ($supplierId && $supplierId !== 'all') {
+            $query->where('supplier_id', $supplierId);
+        }
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('note', 'like', "%{$search}%")
+                  ->orWhere('id', 'like', "%{$search}%")
+                  ->orWhereHas('supplier', function($sq) use ($search) {
+                      $sq->where('name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('customer', function($cq) use ($search) {
+                      $cq->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $payments = $query->orderBy('payment_date', 'desc')->orderBy('id', 'desc')->get();
+
+        // Calculate KPI summaries
+        $totalAmount = $payments->sum('amount');
+        $cashAmount = $payments->where('payment_method', 'cash')->sum('amount');
+        $bankAmount = $payments->whereIn('payment_method', ['bank', 'bank_transfer'])->sum('amount');
+        $otherAmount = $totalAmount - $cashAmount - $bankAmount;
+        $totalCount = $payments->count();
+        $avgAmount = $totalCount > 0 ? ($totalAmount / $totalCount) : 0;
+
+        $suppliers = Supplier::orderBy('name')->select('id', 'name', 'phone')->get();
+
+        return Inertia::render('Reports/Payments', [
+            'payments' => $payments,
+            'suppliers' => $suppliers,
+            'summary' => [
+                'total_amount' => $totalAmount,
+                'cash_amount' => $cashAmount,
+                'bank_amount' => $bankAmount,
+                'other_amount' => $otherAmount,
+                'total_count' => $totalCount,
+                'avg_amount' => $avgAmount,
+            ],
+            'filters' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'payment_method' => $paymentMethod,
+                'supplier_id' => $supplierId,
+                'search' => $search,
+            ]
+        ]);
+    }
+
+    /**
+     * Export Payments PDF
+     */
+    public function exportPaymentsPDF(Request $request)
+    {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $paymentMethod = $request->input('payment_method', 'all');
+        $supplierId = $request->input('supplier_id', 'all');
+
+        $query = Payment::where('type', 'paid')
+            ->with(['supplier', 'customer', 'user', 'purchase']);
+
+        if ($startDate) {
+            $query->whereDate('payment_date', '>=', Carbon::parse($startDate)->toDateString());
+        }
+        if ($endDate) {
+            $query->whereDate('payment_date', '<=', Carbon::parse($endDate)->toDateString());
+        }
+        if ($paymentMethod && $paymentMethod !== 'all') {
+            if ($paymentMethod === 'bank_all') {
+                $query->whereIn('payment_method', ['bank', 'bank_transfer']);
+            } else {
+                $query->where('payment_method', $paymentMethod);
+            }
+        }
+        if ($supplierId && $supplierId !== 'all') {
+            $query->where('supplier_id', $supplierId);
+        }
+
+        $payments = $query->orderBy('payment_date', 'asc')->orderBy('id', 'asc')->get();
+
+        $totalAmount = $payments->sum('amount');
+        $cashAmount = $payments->where('payment_method', 'cash')->sum('amount');
+        $bankAmount = $payments->whereIn('payment_method', ['bank', 'bank_transfer'])->sum('amount');
+
+        $data = [
+            'payments' => $payments,
+            'summary' => [
+                'total_amount' => $totalAmount,
+                'cash_amount' => $cashAmount,
+                'bank_amount' => $bankAmount,
+                'count' => $payments->count(),
+            ],
+            'filters' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'payment_method' => $paymentMethod,
+            ],
+            'company' => \App\Models\CompanySetting::first(),
+            'generated_at' => now()->format('F j, Y, g:i a')
+        ];
+
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'Arial');
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $html = view('reports.payments-pdf', $data)->render();
+
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return response($dompdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="payments_report.pdf"');
+    }
+
+    /**
+     * Comprehensive Executive Financial & Audit Report
+     */
+    public function financialAudit(Request $request)
+    {
+        $period = $request->input('period', 'monthly');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        [$start, $end] = $this->resolveAuditDateRange($period, $startDate, $endDate);
+        $data = $this->getFinancialAuditData($start, $end);
+
+        return Inertia::render('Reports/FinancialAudit', [
+            'audit' => $data,
+            'filters' => [
+                'period' => $period,
+                'start_date' => $start->toDateString(),
+                'end_date' => $end->toDateString(),
+            ]
+        ]);
+    }
+
+    /**
+     * Export Financial Audit PDF
+     */
+    public function exportFinancialAuditPDF(Request $request)
+    {
+        $period = $request->input('period', 'monthly');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        [$start, $end] = $this->resolveAuditDateRange($period, $startDate, $endDate);
+        $data = $this->getFinancialAuditData($start, $end);
+
+        $pdfData = [
+            'audit' => $data,
+            'filters' => [
+                'period' => $period,
+                'start_date' => $start->format('d M, Y'),
+                'end_date' => $end->format('d M, Y'),
+            ],
+            'company' => \App\Models\CompanySetting::first(),
+            'generated_at' => now()->format('F j, Y, g:i a')
+        ];
+
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'Arial');
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $html = view('reports.financial-audit-pdf', $pdfData)->render();
+
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $filename = "financial_audit_report_{$start->format('Ymd')}_{$end->format('Ymd')}.pdf";
+
+        return response($dompdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
+    }
+
+    /**
+     * Export Financial Audit Excel/CSV
+     */
+    public function exportFinancialAuditExcel(Request $request)
+    {
+        return $this->exportFinancialAuditCSV($request, 'excel');
+    }
+
+    public function exportFinancialAuditCSV(Request $request, $format = 'csv')
+    {
+        $period = $request->input('period', 'monthly');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        [$start, $end] = $this->resolveAuditDateRange($period, $startDate, $endDate);
+        $data = $this->getFinancialAuditData($start, $end);
+
+        $filename = "financial_audit_{$period}_{$start->format('Ymd')}_{$end->format('Ymd')}";
+
+        $csv = "\xEF\xBB\xBF"; // Add BOM
+        $csv .= "EXECUTIVE FINANCIAL & AUDIT REPORT\n";
+        $csv .= "Period:," . ucfirst($period) . " (" . $start->format('Y-m-d') . " to " . $end->format('Y-m-d') . ")\n";
+        $csv .= "Generated At:," . now()->format('Y-m-d H:i:s') . "\n\n";
+
+        // Summary Section
+        $csv .= "--- EXECUTIVE FINANCIAL SUMMARY ---\n";
+        $csv .= "Metric,Amount (PKR),Notes\n";
+        $csv .= "Net Sales," . number_format($data['sales']['net_sales'], 2, '.', '') . ",Total Invoices: {$data['sales']['count']}\n";
+        $csv .= "Gross Sales," . number_format($data['sales']['gross_sales'], 2, '.', '') . ",\n";
+        $csv .= "Sales Returns," . number_format($data['sales']['returns_total'], 2, '.', '') . ",\n";
+        $csv .= "Cost of Goods Sold (COGS)," . number_format($data['sales']['net_cogs'], 2, '.', '') . ",\n";
+        $csv .= "Gross Profit," . number_format($data['profit']['gross_profit'], 2, '.', '') . ",Margin: {$data['profit']['gross_margin']}%\n";
+        $csv .= "Operating Expenses," . number_format($data['expenses']['total'], 2, '.', '') . ",Expense Count: {$data['expenses']['count']}\n";
+        $csv .= "Net Profit (Kamai / Nafa)," . number_format($data['profit']['net_profit'], 2, '.', '') . ",Margin: {$data['profit']['net_margin']}%\n";
+        $csv .= "Total Purchases," . number_format($data['purchases']['total'], 2, '.', '') . ",Total Bills: {$data['purchases']['count']}\n";
+        $csv .= "Cash In (Customer Collections)," . number_format($data['cash_flow']['cash_in_total'], 2, '.', '') . ",Galla: {$data['cash_flow']['cash_in_galla']} | Bank: {$data['cash_flow']['cash_in_bank']}\n";
+        $csv .= "Cash Out (Suppliers + Expenses)," . number_format($data['cash_flow']['total_outflow'], 2, '.', '') . ",Suppliers: {$data['cash_flow']['cash_out_supplier_total']} | Expenses: {$data['expenses']['total']}\n";
+        $csv .= "Net Period Cash Flow," . number_format($data['cash_flow']['net_cash_flow'], 2, '.', '') . ",\n";
+        $csv .= "Market Customer Receivables (Lena)," . number_format($data['market']['total_receivables'], 2, '.', '') . ",\n";
+        $csv .= "Market Supplier Payables (Dena)," . number_format($data['market']['total_payables'], 2, '.', '') . ",\n";
+        $csv .= "Net Market Position," . number_format($data['market']['net_market_balance'], 2, '.', '') . ",\n";
+        $csv .= "Godown Stock Valuation," . number_format($data['stock']['total_value'], 2, '.', '') . ",\n\n";
+
+        // Daily Breakdown Table
+        $csv .= "--- DAILY TIMELINE AUDIT BREAKDOWN ---\n";
+        $csv .= "Date,Net Sales,Purchases,Cash In (Received),Cash Out (Paid),Expenses,Gross Profit,Net Profit,Net Cash Flow\n";
+        foreach ($data['timeline'] as $day) {
+            $csv .= sprintf(
+                '"%s",%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f' . "\n",
+                $day['date'] . ' (' . $day['day_name'] . ')',
+                $day['sales'],
+                $day['purchases'],
+                $day['cash_in'],
+                $day['cash_out'],
+                $day['expenses'],
+                $day['gross_profit'],
+                $day['net_profit'],
+                $day['net_cash_flow']
+            );
+        }
+
+        // Expense Category Breakdown
+        $csv .= "\n--- EXPENSE BREAKDOWN BY CATEGORY ---\n";
+        $csv .= "Category Name,Amount (PKR),Percentage\n";
+        foreach ($data['expenses']['by_category'] as $cat) {
+            $csv .= sprintf('"%s",%.2f,%.2f%%' . "\n", $cat['name'], $cat['amount'], $cat['percentage']);
+        }
+
+        $contentType = $format === 'excel' ? 'application/vnd.ms-excel' : 'text/csv';
+        $extension = $format === 'excel' ? 'csv' : 'csv';
+
+        return response($csv)
+            ->header('Content-Type', $contentType)
+            ->header('Content-Disposition', "attachment; filename=\"{$filename}.{$extension}\"");
+    }
+
+    /**
+     * Resolve Date Range for Financial Audit
+     */
+    private function resolveAuditDateRange($period, $startDate = null, $endDate = null): array
+    {
+        $now = Carbon::now();
+
+        switch ($period) {
+            case 'daily':
+            case 'today':
+                $start = $startDate ? Carbon::parse($startDate)->startOfDay() : $now->copy()->startOfDay();
+                $end = $endDate ? Carbon::parse($endDate)->endOfDay() : $now->copy()->endOfDay();
+                return [$start, $end];
+
+            case 'yesterday':
+                $yest = $now->copy()->subDay();
+                return [$yest->copy()->startOfDay(), $yest->copy()->endOfDay()];
+
+            case 'weekly':
+            case 'this_week':
+                return [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()];
+
+            case 'last_7_days':
+                return [$now->copy()->subDays(6)->startOfDay(), $now->copy()->endOfDay()];
+
+            case '15days':
+            case '15_days':
+            case 'last_15_days':
+                return [$now->copy()->subDays(14)->startOfDay(), $now->copy()->endOfDay()];
+
+            case 'monthly':
+            case 'this_month':
+                return [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()];
+
+            case 'last_month':
+                $lastMonth = $now->copy()->subMonth();
+                return [$lastMonth->copy()->startOfMonth(), $lastMonth->copy()->endOfMonth()];
+
+            case 'yearly':
+            case 'this_year':
+                return [$now->copy()->startOfYear(), $now->copy()->endOfYear()];
+
+            case 'custom':
+                $start = $startDate ? Carbon::parse($startDate)->startOfDay() : $now->copy()->startOfMonth();
+                $end = $endDate ? Carbon::parse($endDate)->endOfDay() : $now->copy()->endOfMonth();
+                return [$start, $end];
+
+            default:
+                return [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()];
+        }
+    }
+
+    /**
+     * Calculate Complete Financial & Audit Dataset
+     */
+    private function getFinancialAuditData(Carbon $startDate, Carbon $endDate): array
+    {
+        // 1. Sales & COGS
+        $salesData = Sale::whereBetween('created_at', [$startDate, $endDate])
+            ->where('invoice_no', 'not like', 'OPB-%')
+            ->with(['saleItems.product', 'customer:id,name'])
+            ->get();
+
+        $grossSales = 0;
+        $salesCount = $salesData->count();
+        $salesCogs = 0;
+        $cashSales = 0;
+        $creditSales = 0;
+        $bankSales = 0;
+        $totalDiscount = 0;
+
+        $salesByDate = [];
+
+        foreach ($salesData as $sale) {
+            $grossSales += (float) $sale->bill_total;
+            $totalDiscount += (float) ($sale->discount ?? 0);
+
+            if ($sale->payment_type === 'cash') {
+                $cashSales += (float) $sale->bill_total;
+            } elseif ($sale->payment_type === 'credit') {
+                $creditSales += (float) $sale->bill_total;
+            } elseif ($sale->payment_type === 'bank') {
+                $bankSales += (float) $sale->bill_total;
+            } else {
+                $cashSales += (float) $sale->bill_total;
+            }
+
+            $dateKey = $sale->created_at->format('Y-m-d');
+            if (!isset($salesByDate[$dateKey])) {
+                $salesByDate[$dateKey] = ['sales' => 0, 'cogs' => 0, 'count' => 0];
+            }
+            $salesByDate[$dateKey]['sales'] += (float) $sale->bill_total;
+            $salesByDate[$dateKey]['count'] += 1;
+
+            foreach ($sale->saleItems as $item) {
+                $qty = $item->units_sqft > 0 ? (float)$item->units_sqft : (float)$item->quantity;
+                $rate = $item->product->purchase_rate ?? 0;
+                $itemCogs = ($qty * (float)$rate);
+                $salesCogs += $itemCogs;
+                $salesByDate[$dateKey]['cogs'] += $itemCogs;
+            }
+        }
+
+        // 2. Sale Returns & Returns COGS
+        $returnsData = \App\Models\SaleReturn::whereBetween('returned_at', [$startDate, $endDate])
+            ->whereHas('sale', function ($q) {
+                $q->where('invoice_no', 'not like', 'OPB-%');
+            })
+            ->with(['saleReturnItems.saleItem.product'])
+            ->get();
+
+        $returnsTotal = 0;
+        $returnsCogs = 0;
+        $returnsCount = $returnsData->count();
+        $returnsByDate = [];
+
+        foreach ($returnsData as $return) {
+            $returnsTotal += (float) $return->grand_total;
+            $dateKey = Carbon::parse($return->returned_at)->format('Y-m-d');
+
+            if (!isset($returnsByDate[$dateKey])) {
+                $returnsByDate[$dateKey] = ['returns' => 0, 'returns_cogs' => 0];
+            }
+            $returnsByDate[$dateKey]['returns'] += (float) $return->grand_total;
+
+            foreach ($return->saleReturnItems as $returnItem) {
+                $qty = $returnItem->units_sqft > 0 ? (float)$returnItem->units_sqft : (float)$returnItem->quantity;
+                $rate = $returnItem->saleItem->product->purchase_rate ?? 0;
+                $itemCogs = ($qty * (float)$rate);
+                $returnsCogs += $itemCogs;
+                $returnsByDate[$dateKey]['returns_cogs'] += $itemCogs;
+            }
+        }
+
+        $netSales = $grossSales - $returnsTotal;
+        $netCogs = $salesCogs - $returnsCogs;
+        $grossProfit = $netSales - $netCogs;
+        $grossMargin = $netSales > 0 ? round(($grossProfit / $netSales) * 100, 2) : 0;
+        $avgOrderValue = $salesCount > 0 ? round($netSales / $salesCount, 2) : 0;
+
+        // 3. Purchases & Purchase Returns
+        $purchasesData = Purchase::whereBetween('purchased_at', [$startDate, $endDate])
+            ->where('status', '!=', 'cancelled')
+            ->with(['supplier:id,name'])
+            ->get();
+
+        $grossPurchases = 0;
+        $cashPurchases = 0;
+        $creditPurchases = 0;
+        $purchasesCount = $purchasesData->count();
+        $purchasesByDate = [];
+
+        foreach ($purchasesData as $pur) {
+            $grossPurchases += (float) $pur->grand_total;
+            $paid = (float) ($pur->paid_amount ?? 0);
+            $cashPurchases += $paid;
+            $creditPurchases += max(0, (float)$pur->grand_total - $paid);
+
+            $dateKey = Carbon::parse($pur->purchased_at)->format('Y-m-d');
+            if (!isset($purchasesByDate[$dateKey])) {
+                $purchasesByDate[$dateKey] = ['purchases' => 0, 'count' => 0];
+            }
+            $purchasesByDate[$dateKey]['purchases'] += (float) $pur->grand_total;
+            $purchasesByDate[$dateKey]['count'] += 1;
+        }
+
+        $purchaseReturnsData = \App\Models\PurchaseReturn::whereBetween('returned_at', [$startDate, $endDate])
+            ->get();
+        $totalPurchaseReturns = (float) $purchaseReturnsData->sum('grand_total');
+        $purchaseReturnsCount = $purchaseReturnsData->count();
+
+        foreach ($purchaseReturnsData as $pRet) {
+            $dateKey = Carbon::parse($pRet->returned_at)->format('Y-m-d');
+            if (!isset($purchasesByDate[$dateKey])) {
+                $purchasesByDate[$dateKey] = ['purchases' => 0, 'count' => 0];
+            }
+            $purchasesByDate[$dateKey]['purchases'] -= (float) $pRet->grand_total;
+        }
+
+        $netPurchases = max(0, $grossPurchases - $totalPurchaseReturns);
+        $avgPurchaseValue = $purchasesCount > 0 ? round($grossPurchases / $purchasesCount, 2) : 0;
+
+        // 4. Expenses
+        $expensesData = Expense::whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->with('category')
+            ->get();
+
+        $totalExpenses = 0;
+        $expensesCount = $expensesData->count();
+        $expensesByDate = [];
+        $expensesCategoryGroup = [];
+
+        foreach ($expensesData as $exp) {
+            $amount = (float) $exp->amount;
+            $totalExpenses += $amount;
+
+            $dateKey = Carbon::parse($exp->date)->format('Y-m-d');
+            $expensesByDate[$dateKey] = ($expensesByDate[$dateKey] ?? 0) + $amount;
+
+            $catName = $exp->category->name ?? 'General Expense';
+            if (!isset($expensesCategoryGroup[$catName])) {
+                $expensesCategoryGroup[$catName] = 0;
+            }
+            $expensesCategoryGroup[$catName] += $amount;
+        }
+
+        $expenseCategoriesFormatted = [];
+        foreach ($expensesCategoryGroup as $name => $amount) {
+            $pct = $totalExpenses > 0 ? round(($amount / $totalExpenses) * 100, 1) : 0;
+            $expenseCategoriesFormatted[] = [
+                'name' => $name,
+                'amount' => $amount,
+                'percentage' => $pct
+            ];
+        }
+        usort($expenseCategoriesFormatted, fn($a, $b) => $b['amount'] <=> $a['amount']);
+
+        // 5. Net Profit
+        $netProfit = $grossProfit - $totalExpenses;
+        $netMargin = $netSales > 0 ? round(($netProfit / $netSales) * 100, 2) : 0;
+
+        // 6. Cash Inflows (Customer Receipts)
+        $paymentsIn = Payment::where('type', 'received')
+            ->whereBetween('payment_date', [$startDate, $endDate])
+            ->get();
+
+        $cashInTotal = 0;
+        $cashInGalla = 0;
+        $cashInBank = 0;
+        $cashInByDate = [];
+
+        foreach ($paymentsIn as $pin) {
+            $amount = (float) $pin->amount;
+            $cashInTotal += $amount;
+
+            if ($pin->payment_method === 'cash') {
+                $cashInGalla += $amount;
+            } elseif (in_array($pin->payment_method, ['bank', 'bank_transfer'])) {
+                $cashInBank += $amount;
+            } else {
+                $cashInGalla += $amount;
+            }
+
+            $dateKey = Carbon::parse($pin->payment_date)->format('Y-m-d');
+            $cashInByDate[$dateKey] = ($cashInByDate[$dateKey] ?? 0) + $amount;
+        }
+
+        // 7. Cash Outflows (Supplier Payments)
+        $paymentsOut = Payment::where('type', 'paid')
+            ->whereBetween('payment_date', [$startDate, $endDate])
+            ->get();
+
+        $cashOutSupplierTotal = 0;
+        $cashOutSupplierGalla = 0;
+        $cashOutSupplierBank = 0;
+        $cashOutSupplierByDate = [];
+
+        foreach ($paymentsOut as $pout) {
+            $amount = (float) $pout->amount;
+            $cashOutSupplierTotal += $amount;
+
+            if ($pout->payment_method === 'cash') {
+                $cashOutSupplierGalla += $amount;
+            } elseif (in_array($pout->payment_method, ['bank', 'bank_transfer'])) {
+                $cashOutSupplierBank += $amount;
+            } else {
+                $cashOutSupplierGalla += $amount;
+            }
+
+            $dateKey = Carbon::parse($pout->payment_date)->format('Y-m-d');
+            $cashOutSupplierByDate[$dateKey] = ($cashOutSupplierByDate[$dateKey] ?? 0) + $amount;
+        }
+
+        $totalOutflow = $cashOutSupplierTotal + $totalExpenses;
+        $netCashFlow = $cashInTotal - $totalOutflow;
+
+        // 8. Market Position (Customer Receivables & Supplier Payables)
+        $allCustomers = Customer::all();
+        $totalReceivables = 0;
+        $receivableCustomersCount = 0;
+        foreach ($allCustomers as $c) {
+            if ((float)$c->balance > 0) {
+                $totalReceivables += (float) $c->balance;
+                $receivableCustomersCount++;
+            }
+        }
+
+        $allSuppliers = Supplier::all();
+        $totalPayables = 0;
+        $payableSuppliersCount = 0;
+        foreach ($allSuppliers as $s) {
+            if ((float)$s->balance > 0) {
+                $totalPayables += (float) $s->balance;
+                $payableSuppliersCount++;
+            }
+        }
+
+        $netMarketBalance = $totalReceivables - $totalPayables;
+
+        // 9. Godown Stock Valuation
+        $stockInfo = Product::selectRaw('
+            SUM(COALESCE(stock_quantity, 0) * COALESCE(purchase_rate, 0) + COALESCE(stock_meters, 0) * COALESCE(purchase_rate, 0)) as total_value,
+            SUM(COALESCE(stock_quantity, 0)) as total_qty,
+            SUM(COALESCE(stock_meters, 0)) as total_meters,
+            COUNT(*) as total_items
+        ')->first();
+
+        // 10. Daily Timeline Audit Array
+        $allDates = array_unique(array_merge(
+            array_keys($salesByDate),
+            array_keys($returnsByDate),
+            array_keys($purchasesByDate),
+            array_keys($expensesByDate),
+            array_keys($cashInByDate),
+            array_keys($cashOutSupplierByDate)
+        ));
+        sort($allDates);
+
+        $timeline = [];
+        foreach ($allDates as $d) {
+            $dayGrossSales = $salesByDate[$d]['sales'] ?? 0;
+            $daySalesCogs = $salesByDate[$d]['cogs'] ?? 0;
+            $dayReturns = $returnsByDate[$d]['returns'] ?? 0;
+            $dayReturnsCogs = $returnsByDate[$d]['returns_cogs'] ?? 0;
+
+            $dayNetSales = $dayGrossSales - $dayReturns;
+            $dayNetCogs = $daySalesCogs - $dayReturnsCogs;
+            $dayGrossProfit = $dayNetSales - $dayNetCogs;
+            $dayExp = $expensesByDate[$d] ?? 0;
+            $dayNetProfit = $dayGrossProfit - $dayExp;
+
+            $dayPurchases = $purchasesByDate[$d]['purchases'] ?? 0;
+            $dayCashIn = $cashInByDate[$d] ?? 0;
+            $daySupplierOut = $cashOutSupplierByDate[$d] ?? 0;
+            $dayTotalOutflow = $daySupplierOut + $dayExp;
+            $dayNetCashFlow = $dayCashIn - $dayTotalOutflow;
+
+            $carbonDate = Carbon::parse($d);
+
+            $timeline[] = [
+                'date' => $d,
+                'formatted_date' => $carbonDate->format('d M, Y'),
+                'day_name' => $carbonDate->format('D'),
+                'sales' => (float) $dayNetSales,
+                'purchases' => (float) $dayPurchases,
+                'cash_in' => (float) $dayCashIn,
+                'cash_out' => (float) $dayTotalOutflow,
+                'expenses' => (float) $dayExp,
+                'cogs' => (float) $dayNetCogs,
+                'gross_profit' => (float) $dayGrossProfit,
+                'net_profit' => (float) $dayNetProfit,
+                'net_cash_flow' => (float) $dayNetCashFlow,
+                'is_profitable' => $dayNetProfit >= 0,
+            ];
+        }
+
+        // Return unified audit structure
+        return [
+            'period_info' => [
+                'start_date' => $startDate->toDateString(),
+                'end_date' => $endDate->toDateString(),
+                'start_formatted' => $startDate->format('d M, Y'),
+                'end_formatted' => $endDate->format('d M, Y'),
+                'days_count' => $startDate->diffInDays($endDate) + 1,
+            ],
+            'sales' => [
+                'gross_sales' => (float) $grossSales,
+                'returns_total' => (float) $returnsTotal,
+                'net_sales' => (float) $netSales,
+                'count' => $salesCount,
+                'returns_count' => $returnsCount,
+                'cash_sales' => (float) $cashSales,
+                'credit_sales' => (float) $creditSales,
+                'bank_sales' => (float) $bankSales,
+                'discount' => (float) $totalDiscount,
+                'net_cogs' => (float) $netCogs,
+                'avg_order_value' => (float) $avgOrderValue,
+            ],
+            'purchases' => [
+                'total' => (float) $netPurchases,
+                'gross_purchases' => (float) $grossPurchases,
+                'returns_total' => (float) $totalPurchaseReturns,
+                'returns_count' => (int) $purchaseReturnsCount,
+                'count' => $purchasesCount,
+                'cash_purchases' => (float) $cashPurchases,
+                'credit_purchases' => (float) $creditPurchases,
+                'avg_purchase' => (float) $avgPurchaseValue,
+            ],
+            'expenses' => [
+                'total' => (float) $totalExpenses,
+                'count' => $expensesCount,
+                'by_category' => $expenseCategoriesFormatted,
+            ],
+            'profit' => [
+                'gross_profit' => (float) $grossProfit,
+                'gross_margin' => (float) $grossMargin,
+                'net_profit' => (float) $netProfit,
+                'net_margin' => (float) $netMargin,
+                'profit_per_day' => ($startDate->diffInDays($endDate) + 1) > 0 ? round($netProfit / ($startDate->diffInDays($endDate) + 1), 2) : 0,
+                'is_profitable' => $netProfit >= 0,
+            ],
+            'cash_flow' => [
+                'cash_in_total' => (float) $cashInTotal,
+                'cash_in_galla' => (float) $cashInGalla,
+                'cash_in_bank' => (float) $cashInBank,
+                'cash_out_supplier_total' => (float) $cashOutSupplierTotal,
+                'cash_out_supplier_galla' => (float) $cashOutSupplierGalla,
+                'cash_out_supplier_bank' => (float) $cashOutSupplierBank,
+                'expenses_paid' => (float) $totalExpenses,
+                'total_outflow' => (float) $totalOutflow,
+                'net_cash_flow' => (float) $netCashFlow,
+                'is_positive_cashflow' => $netCashFlow >= 0,
+            ],
+            'market' => [
+                'total_receivables' => (float) $totalReceivables,
+                'receivable_customers_count' => $receivableCustomersCount,
+                'total_payables' => (float) $totalPayables,
+                'payable_suppliers_count' => $payableSuppliersCount,
+                'net_market_balance' => (float) $netMarketBalance,
+                'is_surplus' => $netMarketBalance >= 0,
+                'period_credit_sales' => (float) $creditSales,
+                'period_collections' => (float) $cashInTotal,
+                'period_credit_purchases' => (float) $creditPurchases,
+                'period_supplier_payments' => (float) $cashOutSupplierTotal,
+            ],
+            'stock' => [
+                'total_value' => (float) ($stockInfo->total_value ?? 0),
+                'total_qty' => (float) ($stockInfo->total_qty ?? 0),
+                'total_meters' => (float) ($stockInfo->total_meters ?? 0),
+                'total_items' => (int) ($stockInfo->total_items ?? 0),
+            ],
+            'timeline' => $timeline,
+        ];
+    }
 }
+
 

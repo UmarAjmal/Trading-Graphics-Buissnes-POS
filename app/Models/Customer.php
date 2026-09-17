@@ -76,36 +76,35 @@ class Customer extends Model
      */
     public function getBalanceAttribute()
     {
-        // 1. Debt from Pending Payments (Old System - Credit Sales)
-        // This includes all unpaid amounts from previous credit sales.
-        // We use amount_due because it reflects payments made against these specific records
-        $debtFromPendingPayments = $this->pendingPayments()->sum('amount_due');
+        // 1. Debt from Pending Payments (Credit Sales)
+        $debtFromPendingPayments = (float) $this->pendingPayments()->sum('amount_due');
         
-        // 2. Advances (Old System)
-        $totalAdvances = $this->advances()->sum('amount');
+        // 2. Advances (Customer Advance deposits)
+        $totalAdvances = (float) $this->advances()->where('amount', '>', 0)->sum('amount');
         
-        // 3. New Ledger Payments (New System)
-        // Received payments reduce the debt.
-        // FIX: Exclude payments linked to sales (Cash/Bank Sales) because PendingPayment already reflects the net amount.
-        // We only want separate "on account" payments here.
-        $totalNewReceived = $this->payments()
+        // 3. New Ledger Payments (Received payments on-account, without sale_id)
+        $totalNewReceived = (float) $this->payments()
             ->where('type', 'received')
             ->whereNull('sale_id')
             ->sum('amount');
             
-        // 4. Paid Payments (New System - if we pay customer e.g. Refund)
-        // If we pay customer, it effectively increases their debt (or reduces our liability to them).
-        // Also exclude payments linked to sales (if any weird case exists)
-        $totalNewPaid = $this->payments()
+        // 4. Paid Payments (Disbursements paid to customer on-account, without sale_id)
+        $totalNewPaid = (float) $this->payments()
              ->where('type', 'paid')
              ->whereNull('sale_id')
              ->sum('amount');
         
-        // Formula:
-        // Balance = (Pending Payments Due) - (Advances) - (New Received) + (New Paid)
-        // Positive = Customer Owes Us.
+        // 5. Store Credit Returns on Paid Sales (Sales where no pending payment exists)
+        // When goods from cash/bank sales are returned on credit, they represent store credit for the customer
+        $storeCreditsFromReturns = (float) \App\Models\SaleReturn::whereIn('sale_id', $this->sales()->pluck('id'))
+            ->where('refund_type', 'credit')
+            ->whereDoesntHave('sale.pendingPayment')
+            ->sum('grand_total');
         
-        return $debtFromPendingPayments - $totalAdvances - $totalNewReceived + $totalNewPaid;
+        // Formula:
+        // Balance = (Pending Payments Due) - (Advances) - (New Received) + (New Paid) - (Store Credits From Returns)
+        // Positive = Customer Owes Us. Negative = We owe customer.
+        return $debtFromPendingPayments - $totalAdvances - $totalNewReceived + $totalNewPaid - $storeCreditsFromReturns;
     }
     /**
      * Get all advance payments for this customer

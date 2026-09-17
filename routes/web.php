@@ -25,6 +25,8 @@ use App\Http\Controllers\UnitController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\SystemInfoController;
 use App\Http\Controllers\DatabaseCleanupController;
+use App\Http\Controllers\SaleReturnController;
+use App\Http\Controllers\PurchaseReturnController;
 use Inertia\Inertia;
 
 // Public welcome page
@@ -245,6 +247,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/receivables', [ReportController::class, 'receivables'])->name('reports.receivables');
     Route::get('/reports/receivables/export-pdf', [ReportController::class, 'exportReceivablesPDF'])->name('reports.receivables.export-pdf');
 
+    // Payables Report
+    Route::get('/reports/payables', [ReportController::class, 'payables'])->name('reports.payables');
+    Route::get('/reports/payables/export-pdf', [ReportController::class, 'exportPayablesPDF'])->name('reports.payables.export-pdf');
+
+    // Receipt Report (Cash In)
+    Route::get('/reports/receipts', [ReportController::class, 'receipts'])->name('reports.receipts');
+    Route::get('/reports/receipts/export-pdf', [ReportController::class, 'exportReceiptsPDF'])->name('reports.receipts.export-pdf');
+
+    // Payment Report (Cash Out)
+    Route::get('/reports/payments', [ReportController::class, 'payments'])->name('reports.payments');
+    Route::get('/reports/payments/export-pdf', [ReportController::class, 'exportPaymentsPDF'])->name('reports.payments.export-pdf');
+
     Route::get('/reports/suppliers', [ReportController::class, 'suppliers'])->name('reports.suppliers');
     Route::get('/reports/suppliers/export/pdf', [ReportController::class, 'exportSuppliersPDF'])->name('reports.suppliers.export.pdf');
     Route::get('/reports/suppliers/export/csv', [ReportController::class, 'exportSuppliersCSV'])->name('reports.suppliers.export.csv');
@@ -254,6 +268,12 @@ Route::middleware(['auth'])->group(function () {
 
     // All Parties Ledger
     Route::get('/reports/all-parties-ledger', [ReportController::class, 'allPartiesLedger'])->name('reports.all-parties-ledger');
+
+    // Executive Financial & Audit Report
+    Route::get('/reports/financial-audit', [ReportController::class, 'financialAudit'])->name('reports.financial-audit');
+    Route::get('/reports/financial-audit/export-pdf', [ReportController::class, 'exportFinancialAuditPDF'])->name('reports.financial-audit.export-pdf');
+    Route::get('/reports/financial-audit/export-excel', [ReportController::class, 'exportFinancialAuditExcel'])->name('reports.financial-audit.export-excel');
+    Route::get('/reports/financial-audit/export-csv', [ReportController::class, 'exportFinancialAuditCSV'])->name('reports.financial-audit.export-csv');
 
     // Legacy routes (keep for backward compatibility)
     Route::get('/api/reports/data', [ReportController::class, 'getData'])->name('api.reports.data');
@@ -353,11 +373,32 @@ Route::middleware(['auth'])->group(function () {
             ->whereNumber('sale');
     });
 
+    // Returns Module (Sales Return & Purchase Return)
+    Route::prefix('returns')->name('returns.')->group(function () {
+        // Sale Returns
+        Route::get('/sales', [SaleReturnController::class, 'index'])->name('sales.index');
+        Route::get('/sales/create', [SaleReturnController::class, 'create'])->name('sales.create');
+        Route::get('/sales/search-invoice', [SaleReturnController::class, 'searchInvoice'])->name('sales.search');
+        Route::post('/sales', [SaleReturnController::class, 'store'])->name('sales.store');
+        Route::get('/sales/{saleReturn}', [SaleReturnController::class, 'show'])->name('sales.show');
+        Route::delete('/sales/{saleReturn}', [SaleReturnController::class, 'destroy'])->name('sales.destroy');
+
+        // Purchase Returns
+        Route::get('/purchases', [PurchaseReturnController::class, 'index'])->name('purchases.index');
+        Route::get('/purchases/create', [PurchaseReturnController::class, 'create'])->name('purchases.create');
+        Route::get('/purchases/search-purchase', [PurchaseReturnController::class, 'searchPurchase'])->name('purchases.search');
+        Route::post('/purchases', [PurchaseReturnController::class, 'store'])->name('purchases.store');
+        Route::get('/purchases/{purchaseReturn}', [PurchaseReturnController::class, 'show'])->name('purchases.show');
+        Route::delete('/purchases/{purchaseReturn}', [PurchaseReturnController::class, 'destroy'])->name('purchases.destroy');
+    });
+
     // Print Routes - accessible by all authenticated users
     Route::get('/prints/invoice/{sale}/a4', [PrintController::class, 'invoiceA4'])->name('prints.invoice.a4');
     Route::get('/prints/invoice/{sale}/80mm', [PrintController::class, 'invoice80mm'])->name('prints.invoice.80mm');
     Route::get('/prints/return/{saleReturn}/a4', [PrintController::class, 'returnA4'])->name('prints.return.a4');
     Route::get('/prints/return/{saleReturn}/80mm', [PrintController::class, 'return80mm'])->name('prints.return.80mm');
+    Route::get('/prints/purchase-return/{purchaseReturn}/a4', [PrintController::class, 'purchaseReturnA4'])->name('prints.purchase-return.a4');
+    Route::get('/prints/purchase-return/{purchaseReturn}/80mm', [PrintController::class, 'purchaseReturn80mm'])->name('prints.purchase-return.80mm');
 
 
     // Export Routes - permission-based access

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Payment;
 use App\Models\Sale;
 use App\Models\SaleReturn;
 use App\Models\Customer;
@@ -96,6 +97,76 @@ class DashboardController extends Controller
             $expensesChange = $yesterdayExpenses > 0
                 ? (($todayExpenses - $yesterdayExpenses) / $yesterdayExpenses) * 100
                 : ($todayExpenses > 0 ? 100 : 0);
+
+            // ========================================================
+            // DAILY FINANCIAL KPIS: Cash In, Cash Out, Closing Balance, Profit
+            // ========================================================
+            // 1. Cash In Today (Customer payments received)
+            $todayCashIn = Payment::where(function($q) {
+                    $q->whereNotNull('customer_id')->orWhere('type', 'received');
+                })
+                ->where('type', 'received')
+                ->whereDate('payment_date', Carbon::today())
+                ->sum('amount');
+
+            $yesterdayCashIn = Payment::where(function($q) {
+                    $q->whereNotNull('customer_id')->orWhere('type', 'received');
+                })
+                ->where('type', 'received')
+                ->whereDate('payment_date', Carbon::yesterday())
+                ->sum('amount');
+
+            $cashInChange = $yesterdayCashIn > 0
+                ? (($todayCashIn - $yesterdayCashIn) / $yesterdayCashIn) * 100
+                : ($todayCashIn > 0 ? 100 : 0);
+
+            // 2. Cash Out Today (Supplier payments + Expenses)
+            $todaySuppPaid = Payment::whereNotNull('supplier_id')
+                ->where('type', 'paid')
+                ->whereDate('payment_date', Carbon::today())
+                ->sum('amount');
+            $todayCashOut = $todaySuppPaid + $todayExpenses;
+
+            $yesterdaySuppPaid = Payment::whereNotNull('supplier_id')
+                ->where('type', 'paid')
+                ->whereDate('payment_date', Carbon::yesterday())
+                ->sum('amount');
+            $yesterdayCashOut = $yesterdaySuppPaid + $yesterdayExpenses;
+
+            $cashOutChange = $yesterdayCashOut > 0
+                ? (($todayCashOut - $yesterdayCashOut) / $yesterdayCashOut) * 100
+                : ($todayCashOut > 0 ? 100 : 0);
+
+            // 3. Closing Balance Today (Net Cash in Hand = Cash In - Cash Out)
+            $todayClosingBalance = $todayCashIn - $todayCashOut;
+            $yesterdayClosingBalance = $yesterdayCashIn - $yesterdayCashOut;
+
+            $closingChange = $yesterdayClosingBalance != 0
+                ? (($todayClosingBalance - $yesterdayClosingBalance) / abs($yesterdayClosingBalance)) * 100
+                : ($todayClosingBalance != 0 ? 100 : 0);
+
+            // 4. Profit Today (Net Profit = Sales - COGS - Expenses)
+            $todayCogs = DB::table('sale_items as si')
+                ->join('sales as s', 's.id', '=', 'si.sale_id')
+                ->join('products as p', 'p.id', '=', 'si.product_id')
+                ->where('s.invoice_no', 'not like', 'OPB-%')
+                ->whereBetween('s.created_at', [$todayStart, $todayEnd])
+                ->sum(DB::raw('COALESCE(si.units_sqft, si.quantity) * COALESCE(p.purchase_rate, 0)'));
+
+            $todayProfit = $todayNetSales - $todayCogs - $todayExpenses;
+
+            $yesterdayCogs = DB::table('sale_items as si')
+                ->join('sales as s', 's.id', '=', 'si.sale_id')
+                ->join('products as p', 'p.id', '=', 'si.product_id')
+                ->where('s.invoice_no', 'not like', 'OPB-%')
+                ->whereBetween('s.created_at', [$yesterdayStart, $yesterdayEnd])
+                ->sum(DB::raw('COALESCE(si.units_sqft, si.quantity) * COALESCE(p.purchase_rate, 0)'));
+
+            $yesterdayProfit = $yesterdayNetSales - $yesterdayCogs - $yesterdayExpenses;
+
+            $profitChange = $yesterdayProfit != 0
+                ? (($todayProfit - $yesterdayProfit) / abs($yesterdayProfit)) * 100
+                : ($todayProfit != 0 ? 100 : 0);
             
             // Get recent transactions
             $recentTransactions = Sale::with(['customer'])
@@ -172,6 +243,40 @@ class DashboardController extends Controller
                         'change' => ($expensesChange >= 0 ? '+' : '') . number_format($expensesChange, 1) . '%',
                         'trend' => $expensesChange >= 0 ? 'up' : 'down',
                         'icon' => 'CurrencyIcon'
+                    ]
+                ],
+                'financialKpis' => [
+                    [
+                        'title' => 'Cash In',
+                        'value' => config('app.currency', 'Rs.') . ' ' . number_format($todayCashIn, 0),
+                        'change' => ($cashInChange >= 0 ? '+' : '') . number_format($cashInChange, 1) . '%',
+                        'trend' => $cashInChange >= 0 ? 'up' : 'down',
+                        'icon' => 'TrendingUpIcon',
+                        'subtitle' => 'Customer receipts today'
+                    ],
+                    [
+                        'title' => 'Cash Out',
+                        'value' => config('app.currency', 'Rs.') . ' ' . number_format($todayCashOut, 0),
+                        'change' => ($cashOutChange >= 0 ? '+' : '') . number_format($cashOutChange, 1) . '%',
+                        'trend' => $cashOutChange >= 0 ? 'up' : 'down',
+                        'icon' => 'CurrencyIcon',
+                        'subtitle' => 'Suppliers + Expenses'
+                    ],
+                    [
+                        'title' => 'Closing Balance',
+                        'value' => config('app.currency', 'Rs.') . ' ' . number_format($todayClosingBalance, 0),
+                        'change' => ($closingChange >= 0 ? '+' : '') . number_format($closingChange, 1) . '%',
+                        'trend' => $todayClosingBalance >= 0 ? 'up' : 'down',
+                        'icon' => 'DollarIcon',
+                        'subtitle' => 'Daily Net Cash in Hand'
+                    ],
+                    [
+                        'title' => 'Profit',
+                        'value' => config('app.currency', 'Rs.') . ' ' . number_format($todayProfit, 0),
+                        'change' => ($profitChange >= 0 ? '+' : '') . number_format($profitChange, 1) . '%',
+                        'trend' => $todayProfit >= 0 ? 'up' : 'down',
+                        'icon' => 'ShoppingBagIcon',
+                        'subtitle' => 'Daily Net Profit'
                     ]
                 ],
                 'recentTransactions' => $recentTransactions,

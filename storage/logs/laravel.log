@@ -20312,3 +20312,280 @@
 "} 
 [2026-07-06 13:10:56] local.INFO: User logged in successfully {"user_id":1,"email":"admin@pos.com","ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36","session_id":"BJIowqSEQ6Vc3qTlKvUqEmLaakpJ8tjoatdTHqYR","timestamp":"2026-07-06 15:10:56"} 
 [2026-07-06 13:13:29] local.INFO: Panaflex Stock Deduction (Area Based) {"product_id":9,"qty":1,"length":50.0,"width":126.0,"roll_width":"126.00","units_sqft":1722.0,"meters_deducted":50.0} 
+[2026-09-17 09:20:22] local.INFO: User logged in successfully {"user_id":4,"email":"zohaibsiddiqui@ns.com","ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36","session_id":"N5T4Xn5bLBHeHpdgs8frEIf9pg0LhOzHKdISF7MG","timestamp":"2026-09-17 11:20:22"} 
+[2026-09-17 09:28:35] local.ERROR: PHP Parse error: Syntax error, unexpected T_NS_SEPARATOR on line 1 {"exception":"[object] (Psy\\Exception\\ParseErrorException(code: 0): PHP Parse error: Syntax error, unexpected T_NS_SEPARATOR on line 1 at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\psy\\psysh\\src\\Exception\\ParseErrorException.php:44)
+[stacktrace]
+#0 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\psy\\psysh\\src\\CodeCleaner.php(560): Psy\\Exception\\ParseErrorException::fromParseError(Object(PhpParser\\Error))
+#1 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\psy\\psysh\\src\\CodeCleaner.php(283): Psy\\CodeCleaner->parse('<?php \\\\ = new \\\\...', false)
+#2 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\psy\\psysh\\src\\Shell.php(924): Psy\\CodeCleaner->clean(Array, false)
+#3 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\psy\\psysh\\src\\Shell.php(958): Psy\\Shell->addCode('\\\\ = new \\\\Illumi...', true)
+#4 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\psy\\psysh\\src\\Shell.php(1497): Psy\\Shell->setCode('\\\\ = new \\\\Illumi...', true)
+#5 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\tinker\\src\\Console\\TinkerCommand.php(76): Psy\\Shell->execute('\\\\ = new \\\\Illumi...')
+#6 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\BoundMethod.php(36): Laravel\\Tinker\\Console\\TinkerCommand->handle()
+#7 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\Util.php(43): Illuminate\\Container\\BoundMethod::{closure:Illuminate\\Container\\BoundMethod::call():35}()
+#8 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\BoundMethod.php(96): Illuminate\\Container\\Util::unwrapIfClosure(Object(Closure))
+#9 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod(Object(Illuminate\\Foundation\\Application), Array, Object(Closure))
+#10 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\Container.php(836): Illuminate\\Container\\BoundMethod::call(Object(Illuminate\\Foundation\\Application), Array, Array, NULL)
+#11 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Console\\Command.php(211): Illuminate\\Container\\Container->call(Array)
+#12 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\symfony\\console\\Command\\Command.php(318): Illuminate\\Console\\Command->execute(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#13 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Console\\Command.php(180): Symfony\\Component\\Console\\Command\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#14 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\symfony\\console\\Application.php(1110): Illuminate\\Console\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#15 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\symfony\\console\\Application.php(359): Symfony\\Component\\Console\\Application->doRunCommand(Object(Laravel\\Tinker\\Console\\TinkerCommand), Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#16 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\symfony\\console\\Application.php(194): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#17 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Console\\Kernel.php(197): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#18 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Application.php(1235): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#19 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\artisan(16): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
+#20 {main}
+"} 
+[2026-09-17 09:28:55] local.ERROR: Method Illuminate\Http\Response::getData does not exist. {"exception":"[object] (BadMethodCallException(code: 0): Method Illuminate\\Http\\Response::getData does not exist. at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Macroable\\Traits\\Macroable.php:115)
+[stacktrace]
+#0 C:\\Users\\Dell\\.gemini\\antigravity-ide\\brain\\305ae7e1-0f43-4e21-8960-4eef50d6dba5\\scratch\\test_payables.php(13): Illuminate\\Http\\Response->__call('getData', Array)
+#1 {main}
+"} 
+[2026-09-17 09:46:39] local.ERROR: SQLSTATE[23000]: Integrity constraint violation: 1052 Column 'grand_total' in field list is ambiguous (Connection: mysql, SQL: select sum(`grand_total`) as aggregate from `sale_returns` inner join `sales` on `sales`.`id` = `sale_returns`.`sale_id` where `sales`.`customer_id` = 1 and date(`sale_returns`.`returned_at`) <= 2026-09-17) {"exception":"[object] (Illuminate\\Database\\QueryException(code: 23000): SQLSTATE[23000]: Integrity constraint violation: 1052 Column 'grand_total' in field list is ambiguous (Connection: mysql, SQL: select sum(`grand_total`) as aggregate from `sale_returns` inner join `sales` on `sales`.`id` = `sale_returns`.`sale_id` where `sales`.`customer_id` = 1 and date(`sale_returns`.`returned_at`) <= 2026-09-17) at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php:824)
+[stacktrace]
+#0 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(778): Illuminate\\Database\\Connection->runQueryCallback('select sum(`gra...', Array, Object(Closure))
+#1 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(397): Illuminate\\Database\\Connection->run('select sum(`gra...', Array, Object(Closure))
+#2 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3188): Illuminate\\Database\\Connection->select('select sum(`gra...', Array, true)
+#3 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3173): Illuminate\\Database\\Query\\Builder->runSelect()
+#4 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3763): Illuminate\\Database\\Query\\Builder->{closure:Illuminate\\Database\\Query\\Builder::get():3172}()
+#5 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3172): Illuminate\\Database\\Query\\Builder->onceWithColumns(Array, Object(Closure))
+#6 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3687): Illuminate\\Database\\Query\\Builder->get(Array)
+#7 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3648): Illuminate\\Database\\Query\\Builder->aggregate('sum', Array)
+#8 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(2235): Illuminate\\Database\\Query\\Builder->sum('grand_total')
+#9 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\Traits\\ForwardsCalls.php(23): Illuminate\\Database\\Eloquent\\Builder->__call('sum', Array)
+#10 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\Traits\\ForwardsCalls.php(52): Illuminate\\Database\\Eloquent\\Relations\\Relation->forwardCallTo(Object(Illuminate\\Database\\Eloquent\\Builder), 'sum', Array)
+#11 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Relations\\Relation.php(538): Illuminate\\Database\\Eloquent\\Relations\\Relation->forwardDecoratedCallTo(Object(Illuminate\\Database\\Eloquent\\Builder), 'sum', Array)
+#12 C:\\Users\\Dell\\.gemini\\antigravity-ide\\brain\\305ae7e1-0f43-4e21-8960-4eef50d6dba5\\scratch\\calc_rec_pay.php(35): Illuminate\\Database\\Eloquent\\Relations\\Relation->__call('sum', Array)
+#13 {main}
+
+[previous exception] [object] (PDOException(code: 23000): SQLSTATE[23000]: Integrity constraint violation: 1052 Column 'grand_total' in field list is ambiguous at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php:406)
+[stacktrace]
+#0 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(406): PDO->prepare('select sum(`gra...')
+#1 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(811): Illuminate\\Database\\Connection->{closure:Illuminate\\Database\\Connection::select():397}('select sum(`gra...', Array)
+#2 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(778): Illuminate\\Database\\Connection->runQueryCallback('select sum(`gra...', Array, Object(Closure))
+#3 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(397): Illuminate\\Database\\Connection->run('select sum(`gra...', Array, Object(Closure))
+#4 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3188): Illuminate\\Database\\Connection->select('select sum(`gra...', Array, true)
+#5 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3173): Illuminate\\Database\\Query\\Builder->runSelect()
+#6 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3763): Illuminate\\Database\\Query\\Builder->{closure:Illuminate\\Database\\Query\\Builder::get():3172}()
+#7 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3172): Illuminate\\Database\\Query\\Builder->onceWithColumns(Array, Object(Closure))
+#8 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3687): Illuminate\\Database\\Query\\Builder->get(Array)
+#9 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3648): Illuminate\\Database\\Query\\Builder->aggregate('sum', Array)
+#10 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(2235): Illuminate\\Database\\Query\\Builder->sum('grand_total')
+#11 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\Traits\\ForwardsCalls.php(23): Illuminate\\Database\\Eloquent\\Builder->__call('sum', Array)
+#12 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\Traits\\ForwardsCalls.php(52): Illuminate\\Database\\Eloquent\\Relations\\Relation->forwardCallTo(Object(Illuminate\\Database\\Eloquent\\Builder), 'sum', Array)
+#13 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Relations\\Relation.php(538): Illuminate\\Database\\Eloquent\\Relations\\Relation->forwardDecoratedCallTo(Object(Illuminate\\Database\\Eloquent\\Builder), 'sum', Array)
+#14 C:\\Users\\Dell\\.gemini\\antigravity-ide\\brain\\305ae7e1-0f43-4e21-8960-4eef50d6dba5\\scratch\\calc_rec_pay.php(35): Illuminate\\Database\\Eloquent\\Relations\\Relation->__call('sum', Array)
+#15 {main}
+"} 
+[2026-09-17 09:57:54] local.ERROR: PHP Parse error: Syntax error, unexpected T_NS_SEPARATOR on line 1 {"exception":"[object] (Psy\\Exception\\ParseErrorException(code: 0): PHP Parse error: Syntax error, unexpected T_NS_SEPARATOR on line 1 at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\psy\\psysh\\src\\Exception\\ParseErrorException.php:44)
+[stacktrace]
+#0 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\psy\\psysh\\src\\CodeCleaner.php(560): Psy\\Exception\\ParseErrorException::fromParseError(Object(PhpParser\\Error))
+#1 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\psy\\psysh\\src\\CodeCleaner.php(283): Psy\\CodeCleaner->parse('<?php \\\\ = \\\\Carb...', false)
+#2 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\psy\\psysh\\src\\Shell.php(924): Psy\\CodeCleaner->clean(Array, false)
+#3 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\psy\\psysh\\src\\Shell.php(958): Psy\\Shell->addCode('\\\\ = \\\\Carbon\\\\Car...', true)
+#4 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\psy\\psysh\\src\\Shell.php(1497): Psy\\Shell->setCode('\\\\ = \\\\Carbon\\\\Car...', true)
+#5 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\tinker\\src\\Console\\TinkerCommand.php(76): Psy\\Shell->execute('\\\\ = \\\\Carbon\\\\Car...')
+#6 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\BoundMethod.php(36): Laravel\\Tinker\\Console\\TinkerCommand->handle()
+#7 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\Util.php(43): Illuminate\\Container\\BoundMethod::{closure:Illuminate\\Container\\BoundMethod::call():35}()
+#8 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\BoundMethod.php(96): Illuminate\\Container\\Util::unwrapIfClosure(Object(Closure))
+#9 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod(Object(Illuminate\\Foundation\\Application), Array, Object(Closure))
+#10 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\Container.php(836): Illuminate\\Container\\BoundMethod::call(Object(Illuminate\\Foundation\\Application), Array, Array, NULL)
+#11 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Console\\Command.php(211): Illuminate\\Container\\Container->call(Array)
+#12 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\symfony\\console\\Command\\Command.php(318): Illuminate\\Console\\Command->execute(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#13 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Console\\Command.php(180): Symfony\\Component\\Console\\Command\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#14 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\symfony\\console\\Application.php(1110): Illuminate\\Console\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#15 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\symfony\\console\\Application.php(359): Symfony\\Component\\Console\\Application->doRunCommand(Object(Laravel\\Tinker\\Console\\TinkerCommand), Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#16 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\symfony\\console\\Application.php(194): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#17 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Console\\Kernel.php(197): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#18 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Application.php(1235): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#19 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\artisan(16): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
+#20 {main}
+"} 
+[2026-09-17 11:15:33] local.INFO: Session manually extended {"user_id":4,"new_expiration":"2026-09-17 13:15:33","session_id":"N5T4Xn5bLBHeHpdgs8frEIf9pg0LhOzHKdISF7MG"} 
+[2026-09-17 11:23:41] local.ERROR: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'stock' in 'field list' (Connection: mysql, SQL: select SUM(stock * COALESCE(purchase_rate, 0)) as total_value, SUM(stock) as total_qty from `products` limit 1) {"exception":"[object] (Illuminate\\Database\\QueryException(code: 42S22): SQLSTATE[42S22]: Column not found: 1054 Unknown column 'stock' in 'field list' (Connection: mysql, SQL: select SUM(stock * COALESCE(purchase_rate, 0)) as total_value, SUM(stock) as total_qty from `products` limit 1) at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php:824)
+[stacktrace]
+#0 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(778): Illuminate\\Database\\Connection->runQueryCallback('select SUM(stoc...', Array, Object(Closure))
+#1 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(397): Illuminate\\Database\\Connection->run('select SUM(stoc...', Array, Object(Closure))
+#2 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3188): Illuminate\\Database\\Connection->select('select SUM(stoc...', Array, true)
+#3 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3173): Illuminate\\Database\\Query\\Builder->runSelect()
+#4 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3763): Illuminate\\Database\\Query\\Builder->{closure:Illuminate\\Database\\Query\\Builder::get():3172}()
+#5 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3172): Illuminate\\Database\\Query\\Builder->onceWithColumns(Array, Object(Closure))
+#6 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(902): Illuminate\\Database\\Query\\Builder->get(Array)
+#7 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(884): Illuminate\\Database\\Eloquent\\Builder->getModels(Array)
+#8 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Concerns\\BuildsQueries.php(366): Illuminate\\Database\\Eloquent\\Builder->get(Array)
+#9 C:\\Users\\Dell\\.gemini\\antigravity-ide\\brain\\305ae7e1-0f43-4e21-8960-4eef50d6dba5\\scratch\\test_financial_audit.php(108): Illuminate\\Database\\Eloquent\\Builder->first()
+#10 {main}
+
+[previous exception] [object] (PDOException(code: 42S22): SQLSTATE[42S22]: Column not found: 1054 Unknown column 'stock' in 'field list' at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php:406)
+[stacktrace]
+#0 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(406): PDO->prepare('select SUM(stoc...')
+#1 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(811): Illuminate\\Database\\Connection->{closure:Illuminate\\Database\\Connection::select():397}('select SUM(stoc...', Array)
+#2 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(778): Illuminate\\Database\\Connection->runQueryCallback('select SUM(stoc...', Array, Object(Closure))
+#3 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(397): Illuminate\\Database\\Connection->run('select SUM(stoc...', Array, Object(Closure))
+#4 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3188): Illuminate\\Database\\Connection->select('select SUM(stoc...', Array, true)
+#5 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3173): Illuminate\\Database\\Query\\Builder->runSelect()
+#6 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3763): Illuminate\\Database\\Query\\Builder->{closure:Illuminate\\Database\\Query\\Builder::get():3172}()
+#7 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3172): Illuminate\\Database\\Query\\Builder->onceWithColumns(Array, Object(Closure))
+#8 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(902): Illuminate\\Database\\Query\\Builder->get(Array)
+#9 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(884): Illuminate\\Database\\Eloquent\\Builder->getModels(Array)
+#10 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Concerns\\BuildsQueries.php(366): Illuminate\\Database\\Eloquent\\Builder->get(Array)
+#11 C:\\Users\\Dell\\.gemini\\antigravity-ide\\brain\\305ae7e1-0f43-4e21-8960-4eef50d6dba5\\scratch\\test_financial_audit.php(108): Illuminate\\Database\\Eloquent\\Builder->first()
+#12 {main}
+"} 
+[2026-09-17 12:15:32] local.ERROR: Too few arguments to function App\Services\RollConsumptionService::calcMetersUsed(), 2 passed in C:\xampp\htdocs\AL-Raza_Trader_panaflex_pos_web-2\app\Services\InventoryService.php on line 302 and at least 5 expected {"exception":"[object] (ArgumentCountError(code: 0): Too few arguments to function App\\Services\\RollConsumptionService::calcMetersUsed(), 2 passed in C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\app\\Services\\InventoryService.php on line 302 and at least 5 expected at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\app\\Services\\RollConsumptionService.php:45)
+[stacktrace]
+#0 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\app\\Services\\InventoryService.php(302): App\\Services\\RollConsumptionService::calcMetersUsed(1.0, '126.00')
+#1 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\app\\Services\\InventoryService.php(243): App\\Services\\InventoryService->restockPanaflexStock(Object(App\\Models\\SaleReturnItem), Object(App\\Models\\SaleReturn))
+#2 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Concerns\\ManagesTransactions.php(35): App\\Services\\InventoryService->App\\Services\\{closure}(Object(Illuminate\\Database\\MySqlConnection))
+#3 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\DatabaseManager.php(489): Illuminate\\Database\\Connection->transaction(Object(Closure))
+#4 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\Facades\\Facade.php(363): Illuminate\\Database\\DatabaseManager->__call('transaction', Array)
+#5 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\app\\Services\\InventoryService.php(235): Illuminate\\Support\\Facades\\Facade::__callStatic('transaction', Array)
+#6 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\scratch\\test_returns_execution.php(61): App\\Services\\InventoryService->restockForReturn(Object(App\\Models\\SaleReturn))
+#7 {main}
+"} 
+[2026-09-17 12:16:00] local.ERROR: SQLSTATE[01000]: Warning: 1265 Data truncated for column 'type' at row 1 (Connection: mysql, SQL: insert into `stock_moves` (`product_id`, `type`, `ref_id`, `ref_table`, `batch_id`, `qty_change`, `meters_change`, `user_id`, `note`, `updated_at`, `created_at`) values (11, purchase_return, 1, purchase_returns, 61, ?, -50, ?, Purchase Return TEST-PR-001, 2026-09-17 12:16:00, 2026-09-17 12:16:00)) {"exception":"[object] (Illuminate\\Database\\QueryException(code: 01000): SQLSTATE[01000]: Warning: 1265 Data truncated for column 'type' at row 1 (Connection: mysql, SQL: insert into `stock_moves` (`product_id`, `type`, `ref_id`, `ref_table`, `batch_id`, `qty_change`, `meters_change`, `user_id`, `note`, `updated_at`, `created_at`) values (11, purchase_return, 1, purchase_returns, 61, ?, -50, ?, Purchase Return TEST-PR-001, 2026-09-17 12:16:00, 2026-09-17 12:16:00)) at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php:824)
+[stacktrace]
+#0 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(778): Illuminate\\Database\\Connection->runQueryCallback('insert into `st...', Array, Object(Closure))
+#1 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\MySqlConnection.php(42): Illuminate\\Database\\Connection->run('insert into `st...', Array, Object(Closure))
+#2 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Processors\\MySqlProcessor.php(35): Illuminate\\Database\\MySqlConnection->insert('insert into `st...', Array, 'id')
+#3 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3853): Illuminate\\Database\\Query\\Processors\\MySqlProcessor->processInsertGetId(Object(Illuminate\\Database\\Query\\Builder), 'insert into `st...', Array, 'id')
+#4 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(2235): Illuminate\\Database\\Query\\Builder->insertGetId(Array, 'id')
+#5 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(1436): Illuminate\\Database\\Eloquent\\Builder->__call('insertGetId', Array)
+#6 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(1401): Illuminate\\Database\\Eloquent\\Model->insertAndSetId(Object(Illuminate\\Database\\Eloquent\\Builder), Array)
+#7 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(1240): Illuminate\\Database\\Eloquent\\Model->performInsert(Object(Illuminate\\Database\\Eloquent\\Builder))
+#8 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(1219): Illuminate\\Database\\Eloquent\\Model->save()
+#9 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\helpers.php(390): Illuminate\\Database\\Eloquent\\Builder->Illuminate\\Database\\Eloquent\\{closure}(Object(App\\Models\\StockMove))
+#10 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(1218): tap(Object(App\\Models\\StockMove), Object(Closure))
+#11 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\Traits\\ForwardsCalls.php(23): Illuminate\\Database\\Eloquent\\Builder->create(Array)
+#12 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(2540): Illuminate\\Database\\Eloquent\\Model->forwardCallTo(Object(Illuminate\\Database\\Eloquent\\Builder), 'create', Array)
+#13 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(2556): Illuminate\\Database\\Eloquent\\Model->__call('create', Array)
+#14 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\app\\Services\\InventoryService.php(583): Illuminate\\Database\\Eloquent\\Model::__callStatic('create', Array)
+#15 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\app\\Services\\InventoryService.php(420): App\\Services\\InventoryService->createStockMove(11, 'purchase_return', 1, 'purchase_return...', 61, NULL, -50.0, 'Purchase Return...')
+#16 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Concerns\\ManagesTransactions.php(35): App\\Services\\InventoryService->App\\Services\\{closure}(Object(Illuminate\\Database\\MySqlConnection))
+#17 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\DatabaseManager.php(489): Illuminate\\Database\\Connection->transaction(Object(Closure))
+#18 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\Facades\\Facade.php(363): Illuminate\\Database\\DatabaseManager->__call('transaction', Array)
+#19 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\app\\Services\\InventoryService.php(357): Illuminate\\Support\\Facades\\Facade::__callStatic('transaction', Array)
+#20 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\scratch\\test_returns_execution.php(122): App\\Services\\InventoryService->deductForPurchaseReturn(Object(App\\Models\\PurchaseReturn))
+#21 {main}
+
+[previous exception] [object] (PDOException(code: 01000): SQLSTATE[01000]: Warning: 1265 Data truncated for column 'type' at row 1 at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\MySqlConnection.php:53)
+[stacktrace]
+#0 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\MySqlConnection.php(53): PDOStatement->execute()
+#1 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(811): Illuminate\\Database\\MySqlConnection->Illuminate\\Database\\{closure}('insert into `st...', Array)
+#2 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(778): Illuminate\\Database\\Connection->runQueryCallback('insert into `st...', Array, Object(Closure))
+#3 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\MySqlConnection.php(42): Illuminate\\Database\\Connection->run('insert into `st...', Array, Object(Closure))
+#4 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Processors\\MySqlProcessor.php(35): Illuminate\\Database\\MySqlConnection->insert('insert into `st...', Array, 'id')
+#5 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3853): Illuminate\\Database\\Query\\Processors\\MySqlProcessor->processInsertGetId(Object(Illuminate\\Database\\Query\\Builder), 'insert into `st...', Array, 'id')
+#6 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(2235): Illuminate\\Database\\Query\\Builder->insertGetId(Array, 'id')
+#7 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(1436): Illuminate\\Database\\Eloquent\\Builder->__call('insertGetId', Array)
+#8 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(1401): Illuminate\\Database\\Eloquent\\Model->insertAndSetId(Object(Illuminate\\Database\\Eloquent\\Builder), Array)
+#9 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(1240): Illuminate\\Database\\Eloquent\\Model->performInsert(Object(Illuminate\\Database\\Eloquent\\Builder))
+#10 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(1219): Illuminate\\Database\\Eloquent\\Model->save()
+#11 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\helpers.php(390): Illuminate\\Database\\Eloquent\\Builder->Illuminate\\Database\\Eloquent\\{closure}(Object(App\\Models\\StockMove))
+#12 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(1218): tap(Object(App\\Models\\StockMove), Object(Closure))
+#13 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\Traits\\ForwardsCalls.php(23): Illuminate\\Database\\Eloquent\\Builder->create(Array)
+#14 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(2540): Illuminate\\Database\\Eloquent\\Model->forwardCallTo(Object(Illuminate\\Database\\Eloquent\\Builder), 'create', Array)
+#15 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(2556): Illuminate\\Database\\Eloquent\\Model->__call('create', Array)
+#16 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\app\\Services\\InventoryService.php(583): Illuminate\\Database\\Eloquent\\Model::__callStatic('create', Array)
+#17 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\app\\Services\\InventoryService.php(420): App\\Services\\InventoryService->createStockMove(11, 'purchase_return', 1, 'purchase_return...', 61, NULL, -50.0, 'Purchase Return...')
+#18 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Concerns\\ManagesTransactions.php(35): App\\Services\\InventoryService->App\\Services\\{closure}(Object(Illuminate\\Database\\MySqlConnection))
+#19 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\DatabaseManager.php(489): Illuminate\\Database\\Connection->transaction(Object(Closure))
+#20 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\Facades\\Facade.php(363): Illuminate\\Database\\DatabaseManager->__call('transaction', Array)
+#21 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\app\\Services\\InventoryService.php(357): Illuminate\\Support\\Facades\\Facade::__callStatic('transaction', Array)
+#22 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\scratch\\test_returns_execution.php(122): App\\Services\\InventoryService->deductForPurchaseReturn(Object(App\\Models\\PurchaseReturn))
+#23 {main}
+"} 
+[2026-09-17 12:30:14] local.INFO: === CASH/BANK PAYMENT DEBUG === {"customer_id":19,"invoice_no":"INV-0000150","payment_type":"cash"} 
+[2026-09-17 12:30:14] local.INFO: Previous Balance Calculated {"previous_balance":0,"customer_id":19} 
+[2026-09-17 12:30:14] local.INFO: Cash Payment Details {"invoice_no":"INV-0000150","bill_total":39606.0,"previous_balance":0,"advance_used":0,"explicit_advance_used":0,"cash_received":39606,"remaining_due":0.0} 
+[2026-09-17 12:30:14] local.INFO: Panaflex Stock Deduction (Area Based) {"product_id":26,"qty":1,"length":50.0,"width":126.0,"roll_width":"126.00","units_sqft":1722.0,"meters_deducted":50.0} 
+[2026-09-17 12:39:23] local.ERROR: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'notes' in 'field list' (Connection: mysql, SQL: update `pending_payments` set `amount_due` = 81307.39, `notes` = 
+Reversed Sale Return #TEST-DEL-SR-01 (+Rs 14.7), `pending_payments`.`updated_at` = 2026-09-17 12:39:23 where `id` = 1) {"exception":"[object] (Illuminate\\Database\\QueryException(code: 42S22): SQLSTATE[42S22]: Column not found: 1054 Unknown column 'notes' in 'field list' (Connection: mysql, SQL: update `pending_payments` set `amount_due` = 81307.39, `notes` = 
+Reversed Sale Return #TEST-DEL-SR-01 (+Rs 14.7), `pending_payments`.`updated_at` = 2026-09-17 12:39:23 where `id` = 1) at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php:824)
+[stacktrace]
+#0 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(778): Illuminate\\Database\\Connection->runQueryCallback('update `pending...', Array, Object(Closure))
+#1 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(583): Illuminate\\Database\\Connection->run('update `pending...', Array, Object(Closure))
+#2 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(535): Illuminate\\Database\\Connection->affectingStatement('update `pending...', Array)
+#3 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3917): Illuminate\\Database\\Connection->update('update `pending...', Array)
+#4 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(1266): Illuminate\\Database\\Query\\Builder->update(Object(Illuminate\\Support\\Collection))
+#5 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(1316): Illuminate\\Database\\Eloquent\\Builder->update(Array)
+#6 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(1233): Illuminate\\Database\\Eloquent\\Model->performUpdate(Object(Illuminate\\Database\\Eloquent\\Builder))
+#7 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\app\\Http\\Controllers\\SaleReturnController.php(505): Illuminate\\Database\\Eloquent\\Model->save()
+#8 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Concerns\\ManagesTransactions.php(35): App\\Http\\Controllers\\SaleReturnController->App\\Http\\Controllers\\{closure}(Object(Illuminate\\Database\\MySqlConnection))
+#9 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\DatabaseManager.php(489): Illuminate\\Database\\Connection->transaction(Object(Closure))
+#10 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\Facades\\Facade.php(363): Illuminate\\Database\\DatabaseManager->__call('transaction', Array)
+#11 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\app\\Http\\Controllers\\SaleReturnController.php(486): Illuminate\\Support\\Facades\\Facade::__callStatic('transaction', Array)
+#12 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\scratch\\test_return_deletion.php(79): App\\Http\\Controllers\\SaleReturnController->destroy(Object(App\\Models\\SaleReturn))
+#13 {main}
+
+[previous exception] [object] (PDOException(code: 42S22): SQLSTATE[42S22]: Column not found: 1054 Unknown column 'notes' in 'field list' at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php:591)
+[stacktrace]
+#0 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(591): PDO->prepare('update `pending...')
+#1 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(811): Illuminate\\Database\\Connection->Illuminate\\Database\\{closure}('update `pending...', Array)
+#2 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(778): Illuminate\\Database\\Connection->runQueryCallback('update `pending...', Array, Object(Closure))
+#3 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(583): Illuminate\\Database\\Connection->run('update `pending...', Array, Object(Closure))
+#4 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(535): Illuminate\\Database\\Connection->affectingStatement('update `pending...', Array)
+#5 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3917): Illuminate\\Database\\Connection->update('update `pending...', Array)
+#6 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(1266): Illuminate\\Database\\Query\\Builder->update(Object(Illuminate\\Support\\Collection))
+#7 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(1316): Illuminate\\Database\\Eloquent\\Builder->update(Array)
+#8 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(1233): Illuminate\\Database\\Eloquent\\Model->performUpdate(Object(Illuminate\\Database\\Eloquent\\Builder))
+#9 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\app\\Http\\Controllers\\SaleReturnController.php(505): Illuminate\\Database\\Eloquent\\Model->save()
+#10 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Concerns\\ManagesTransactions.php(35): App\\Http\\Controllers\\SaleReturnController->App\\Http\\Controllers\\{closure}(Object(Illuminate\\Database\\MySqlConnection))
+#11 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\DatabaseManager.php(489): Illuminate\\Database\\Connection->transaction(Object(Closure))
+#12 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\Facades\\Facade.php(363): Illuminate\\Database\\DatabaseManager->__call('transaction', Array)
+#13 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\app\\Http\\Controllers\\SaleReturnController.php(486): Illuminate\\Support\\Facades\\Facade::__callStatic('transaction', Array)
+#14 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\scratch\\test_return_deletion.php(79): App\\Http\\Controllers\\SaleReturnController->destroy(Object(App\\Models\\SaleReturn))
+#15 {main}
+"} 
+[2026-09-17 13:09:39] local.ERROR: Class "App\Models\InventoryBatch" not found {"exception":"[object] (Error(code: 0): Class \"App\\Models\\InventoryBatch\" not found at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\scratch\\deep_audit_returns.php:43)
+[stacktrace]
+#0 {main}
+"} 
+[2026-09-17 13:15:36] local.WARNING: Session terminated {"user_id":4,"reason":"Session expired","session_id":"N5T4Xn5bLBHeHpdgs8frEIf9pg0LhOzHKdISF7MG","ip":"127.0.0.1"} 
+[2026-09-17 13:15:36] local.WARNING: Session terminated {"user_id":4,"reason":"Session expired","session_id":"N5T4Xn5bLBHeHpdgs8frEIf9pg0LhOzHKdISF7MG","ip":"127.0.0.1"} 
+[2026-09-17 13:25:21] local.INFO: User logged in successfully {"user_id":4,"email":"zohaibsiddiqui@ns.com","ip":"127.0.0.1","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36","session_id":"vNSG0nC3uvIRNU9RLlcfQTOrQi45qjTNihMXcVXJ","timestamp":"2026-09-17 15:25:21"} 
+[2026-09-17 13:35:58] local.ERROR: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'customer_id' in 'where clause' (Connection: mysql, SQL: select * from `sale_returns` where `customer_id` = 19) {"exception":"[object] (Illuminate\\Database\\QueryException(code: 42S22): SQLSTATE[42S22]: Column not found: 1054 Unknown column 'customer_id' in 'where clause' (Connection: mysql, SQL: select * from `sale_returns` where `customer_id` = 19) at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php:824)
+[stacktrace]
+#0 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(778): Illuminate\\Database\\Connection->runQueryCallback('select * from `...', Array, Object(Closure))
+#1 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(397): Illuminate\\Database\\Connection->run('select * from `...', Array, Object(Closure))
+#2 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3188): Illuminate\\Database\\Connection->select('select * from `...', Array, true)
+#3 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3173): Illuminate\\Database\\Query\\Builder->runSelect()
+#4 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3763): Illuminate\\Database\\Query\\Builder->Illuminate\\Database\\Query\\{closure}()
+#5 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3172): Illuminate\\Database\\Query\\Builder->onceWithColumns(Array, Object(Closure))
+#6 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(902): Illuminate\\Database\\Query\\Builder->get(Array)
+#7 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(884): Illuminate\\Database\\Eloquent\\Builder->getModels(Array)
+#8 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\scratch\\check_customer_ledger.php(28): Illuminate\\Database\\Eloquent\\Builder->get()
+#9 {main}
+
+[previous exception] [object] (PDOException(code: 42S22): SQLSTATE[42S22]: Column not found: 1054 Unknown column 'customer_id' in 'where clause' at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php:406)
+[stacktrace]
+#0 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(406): PDO->prepare('select * from `...')
+#1 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(811): Illuminate\\Database\\Connection->Illuminate\\Database\\{closure}('select * from `...', Array)
+#2 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(778): Illuminate\\Database\\Connection->runQueryCallback('select * from `...', Array, Object(Closure))
+#3 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(397): Illuminate\\Database\\Connection->run('select * from `...', Array, Object(Closure))
+#4 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3188): Illuminate\\Database\\Connection->select('select * from `...', Array, true)
+#5 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3173): Illuminate\\Database\\Query\\Builder->runSelect()
+#6 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3763): Illuminate\\Database\\Query\\Builder->Illuminate\\Database\\Query\\{closure}()
+#7 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3172): Illuminate\\Database\\Query\\Builder->onceWithColumns(Array, Object(Closure))
+#8 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(902): Illuminate\\Database\\Query\\Builder->get(Array)
+#9 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(884): Illuminate\\Database\\Eloquent\\Builder->getModels(Array)
+#10 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\scratch\\check_customer_ledger.php(28): Illuminate\\Database\\Eloquent\\Builder->get()
+#11 {main}
+"} 
+[2026-09-17 13:36:09] local.ERROR: Method Inertia\Response::getData does not exist. {"exception":"[object] (BadMethodCallException(code: 0): Method Inertia\\Response::getData does not exist. at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\vendor\\laravel\\framework\\src\\Illuminate\\Macroable\\Traits\\Macroable.php:115)
+[stacktrace]
+#0 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\scratch\\check_customer_ledger.php(50): Inertia\\Response->__call('getData', Array)
+#1 {main}
+"} 
+[2026-09-17 13:47:18] local.INFO: Sale Reversal - Restored Panaflex Stock {"sale_id":168,"product_id":26,"meters_restored":50.0} 
+[2026-09-17 14:16:53] local.ERROR: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'temp_u666379097_compare.migrations' doesn't exist {"exception":"[object] (PDOException(code: 42S02): SQLSTATE[42S02]: Base table or view not found: 1146 Table 'temp_u666379097_compare.migrations' doesn't exist at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\scratch\\generate_production_migration_sql.php:80)
+[stacktrace]
+#0 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\scratch\\generate_production_migration_sql.php(80): PDO->query('SELECT migratio...')
+#1 {main}
+"} 
+[2026-09-17 14:17:30] local.ERROR: SQLSTATE[42000]: Syntax error or access violation: 1049 Unknown database 'temp_u666379097_compare' {"exception":"[object] (PDOException(code: 42000): SQLSTATE[42000]: Syntax error or access violation: 1049 Unknown database 'temp_u666379097_compare' at C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\scratch\\test_apply_patch.php:19)
+[stacktrace]
+#0 C:\\xampp\\htdocs\\AL-Raza_Trader_panaflex_pos_web-2\\scratch\\test_apply_patch.php(19): PDO->exec('USE `temp_u6663...')
+#1 {main}
+"} 

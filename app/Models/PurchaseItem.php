@@ -58,6 +58,14 @@ class PurchaseItem extends Model
     }
 
     /**
+     * Get all return items for this purchase item
+     */
+    public function returnItems(): HasMany
+    {
+        return $this->hasMany(PurchaseReturnItem::class);
+    }
+
+    /**
      * Calculate total meters for panaflex rolls
      */
     public function getTotalMetersAttribute(): ?float
