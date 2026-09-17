@@ -5,6 +5,25 @@
 [![Inertia.js](https://img.shields.io/badge/Inertia.js-1.0-9553E9?style=for-the-badge&logo=inertia)](https://inertiajs.com)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-38BDF8?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com)
 [![SQLite](https://img.shields.io/badge/SQLite-3.x-003B57?style=for-the-badge&logo=sqlite)](https://sqlite.org)
+[![License](https://img.shields.io/badge/License-Proprietary-red.svg?style=for-the-badge)](LICENSE)
+
+## License
+
+Copyright © 2026 Umar Ajmal. All Rights Reserved.
+
+This source code is publicly available for viewing and educational
+reference purposes only.
+
+No permission is granted to copy, reproduce, modify, distribute,
+publish, sublicense, sell, or use this code or substantial portions
+of this code for commercial or production purposes without prior
+written permission from the copyright holder.
+
+For commercial use, redistribution, modification, or any other use
+beyond viewing and learning, please contact the copyright holder
+for written permission.
+
+---
 
 **Trading & Graphics Panaflex POS** is a comprehensive, production-ready Point of Sale (POS), Inventory, Billing, and Financial Management Web Application specifically designed for **Printing Presses, Panaflex / Flex Media Banners, Graphics Design Shops, and General Trading Businesses**.
 
@@ -222,4 +241,8 @@ AL-Raza_Trader_panaflex_pos_web-2/
 
 ## 🛡️ License & Maintenance
 
-Developed for **Al-Raza Trader / Trading & Graphics POS**. All rights reserved.
+Developed and owned by **Muhammad Umar Ajmal**.  
+Repository: [https://github.com/UmarAjmal/Trading-Graphics-Buissnes-POS.git](https://github.com/UmarAjmal/Trading-Graphics-Buissnes-POS.git)
+
+**Copyright © 2026 Umar Ajmal. All Rights Reserved.**  
+This source code is proprietary and confidential. Strictly for viewing and educational evaluation. For commercial use or licensing inquiries, please contact the author. Refer to the [LICENSE](LICENSE) file for full legal terms.
